@@ -1,10 +1,11 @@
 import PySimpleGUI as _sg
 
 from .data_files import SPSSResults, StudentIDs, Registrations
-from .mail import process_student
+from .process import process_student
+from .send_mail import EmailClient, DirectSMTP
 
 
-def run(email_letter, email_subject):
+def run(email_letter, email_subject, send_mail_object):
     _sg.theme('SystemDefault1')
     layout = []
     layout.append([_sg.Frame('Files',
@@ -78,15 +79,24 @@ def run(email_letter, email_subject):
 
         elif e == "send":
             single_id = v["single_id"]
+            if v["dryrun"]:
+                current_mail_object = None
+            else:
+                current_mail_object = send_mail_object
+                if isinstance(send_mail_object, DirectSMTP) and \
+                    send_mail_object.password is None:
+                    pass # FIXME define password
+
             if len(single_id) > 1:
                 fb = process_student(student_id=single_id,
                                      spss_results=spss_results,
                                      student_ids=ids,
                                      email_letter=email_letter,
                                      email_subject=email_subject,
-                                     dryrun=v["dryrun"])
+                                     send_mail_object=current_mail_object)
                 if v["dryrun"]:
-                    _sg.Print(fb)
+                    _sg.Print(fb) # TODO always output
+                    #todo maybe loggin here
 
             elif registrations is not None:
                 for stud_id, reg_name in registrations:
@@ -96,7 +106,7 @@ def run(email_letter, email_subject):
                                          student_ids=ids,
                                          email_letter=email_letter,
                                          email_subject=email_subject,
-                                         dryrun=v["dryrun"])
+                                         send_mail_object=current_mail_object)
 
                     if v["dryrun"]:
                         _sg.Print(fb[:50])
@@ -109,6 +119,10 @@ def run(email_letter, email_subject):
 
         else:
             break
+
+    if isinstance(send_mail_object, DirectSMTP) and \
+            send_mail_object.is_logged_in:
+        send_mail_object.close()
 
     window.close()
     return

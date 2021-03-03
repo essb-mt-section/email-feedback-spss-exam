@@ -1,7 +1,8 @@
 import pandas as pd
 
-class StudentIDs(object):
+from .format import MarkdownTable
 
+class StudentIDs(object):
 
     def __init__(self, file, sep="\t", col_names=["id", "name", "xx"]):
         """A list of all student IDs and Student names as tsv with column
@@ -92,34 +93,25 @@ class SPSSResults(object):
                       (self.n_questions - guessing_score) * max_grade,
                       ndigits=ndigits))
 
-    def data_as_text(self, student, tt=True):
+    def data_as_markdown(self, student):
         data = self.get_data_dict(student)
         if len(data)==0:
             return ""
 
-        sp = " "
-        rtn = "" + "<tt>"*bool(tt)
-
-        rtn  += "Questions | Response  | correct \n"
-        line = "----------+-----------+----------"
-        rtn += line + "\n"
+        md = MarkdownTable(["Questions", "Response", "Correct"])
         for x in range(1, self.n_questions+1):
-            q = str(x)
-            r = str(data["your_response_{}".format(x)][0])
-            c = str(data["correct_{}".format(x)][0])
-            rtn += sp*4 + q + sp*(6-len(q)+2) + r + sp*(10-len(r)+2) + c+"\n"
+            md.add_row([x, data["your_response_{}".format(x)][0],
+                        data["correct_{}".format(x)][0]])
+        return str(md)
 
-        return rtn + line + "\n" + "</tt>"*bool(tt)
-
-    def grading_as_text(self, student, tt=True):
+    def grading_as_markdown(self, student):
         score = self.get_score(student)
         if score is None:
             return ""
 
-        rtn = "" + "<tt>"*bool(tt)
-        rtn += "Student: {0}\nScore: {1}\nGrade: {2}\n".format(
-            student, score, self.grade_from_score(score=score))
-        return rtn + "</tt>"*bool(tt)
+        md = MarkdownTable(["Student", "Score", "Grade"])
+        md.add_row([student, score, self.grade_from_score(score=score)])
+        return str(md)
 
 
 class Registrations(object):

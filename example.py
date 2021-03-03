@@ -13,13 +13,15 @@ if __name__ == "__main__":
         file=path.join(folder, "B44-SPSS-feedback-1.csv"))
     spss_results = sef.SPSSResults(file=path.join(folder,
                             "results_256.csv"), n_questions=20)
+
     ## single subject
     rtn = sef.process_student(student_id=552324,
                               spss_results=spss_results,
                               student_ids=ids,
                               email_letter=EMAIL_TXT,
                               email_subject=EMAIL_SUBJECT,
-                              dryrun=True)
+                              send_mail_object=sef.EmailClient()) # dry run,
+    # else send_mail_object=sef.EmailClient() or sef.DirectSMTP(...)
 
     ## or multiple subjects using registration file
     # for student_id, reg_name in
@@ -27,4 +29,5 @@ if __name__ == "__main__":
     #    print("Process {0} ({1})".format(student_id, reg_name))
     #    sef.process_student(student_id=student_id, spss_results=spss_results,
     #                        student_ids=ids, email_letter=EMAIL_TXT,
-    #                        email_subject=EMAIL_SUBJECT, dryrun=True)
+    #                        email_subject=EMAIL_SUBJECT,
+    #                        send_mail_object=None)
