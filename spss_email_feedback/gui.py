@@ -2,7 +2,7 @@ import PySimpleGUI as _sg
 
 from .data_files import SPSSResults, StudentIDs, Registrations
 from .process import process_student
-from .send_mail import EmailClient, DirectSMTP
+from .send_mail import DirectSMTP
 
 
 def run(email_letter, email_subject, send_mail_object):
