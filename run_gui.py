@@ -2,13 +2,17 @@
 """O. Lindemann"""
 
 if __name__ == "__main__":
-    from spss_email_feedback import DirectSMTP, EmailClient
+    import spss_email_feedback as sef
     from spss_email_feedback import gui
-    from .config import *
 
-    so = DirectSMTP(smtp_server=SMTP_SERVER,user=USER,
-                    sender_address=FROM, password=None)
-    so = EmailClient()
+    if sef.settings.direct_smtp:
+        so = sef.DirectSMTP(smtp_server=sef.settings.smtp_server,
+                                   user=sef.settings.user,
+                                   sender_address=sef.settings.sender_email,
+                                   password=None)
+    else:
+        so = sef.EmailClient()
 
-    gui.run(email_letter=EMAIL_TXT, email_subject=EMAIL_SUBJECT,
+    gui.run(email_letter=sef.settings.body,
+            email_subject=sef.settings.subject,
             send_mail_object=so)

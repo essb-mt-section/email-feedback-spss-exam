@@ -1,5 +1,4 @@
-EMAIL_SUBJECT = "SPSS Feedback"
-EMAIL_TXT = """Dear {},
+BODY = """Dear {},
 
 This email is the feedback for your SPSS exam. The table below contains all 
 responses you gave and the correct answers.
@@ -15,6 +14,12 @@ responses you gave and the correct answers.
 Oliver Lindemann
 """
 
-FROM = "lindemann@essb.eur.nl"
-USER = "63596oli@eur.nl"
-SMTP_SERVER = "smtp.office365.com"
+SETTINGS_EMAIL={
+    "body": BODY,
+    "subject": "SPSS Feedback",
+    "sender_email": "lindemann@essb.eur.nl",
+    "user": "63596oli@eur.nl",
+    "smtp_server": "smtp.office365.com",
+    "direct_smtp": True
+}
+

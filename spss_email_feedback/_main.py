@@ -1,10 +1,10 @@
 import pandas as pd
 
-from .format import MarkdownTable
+from ._format import MarkdownTable
+from ._send_mail import DirectSMTP, EmailClient
 
 class StudentIDs(object):
-
-    def __init__(self, file, sep="\t", col_names=["id", "name", "xx"]):
+    def __init__(self, file, sep="\t", col_names=("id", "name", "xx")):
         """A list of all student IDs and Student names as tsv with column
         "name" and "id"
 
@@ -15,33 +15,33 @@ class StudentIDs(object):
         self.df = pd.read_csv(file, sep=sep,
                               names=col_names)
 
-    def find_id(self, id):
+    def find_id(self, the_id):
         """returns indices
         """
 
-        str_id = str(id)[:8].lower() # erna if email
+        str_id = str(the_id)[:8].lower() # erna if email
         idx = []
         for c, x in enumerate(self.df['id']):
             if x.find(str_id)>-1:
                 idx.append(c)
         return idx
 
-    def get(self, id):
+    def get(self, the_id):
         """returns (id, name) or (None, warning text)
         """
 
-        idx = self.find_id(id)
+        idx = self.find_id(the_id)
         if len(idx) == 1:
             return (self.df.loc[idx[0]]['id'],
                     self.df.loc[idx[0]]['name'])
         else:
             if len(idx) == 0:
-                warn = "WARNING: Can't find {} in student IDs .".format(id)
+                warn = "WARNING: Can't find {} in student IDs .".format(the_id)
             else:
                 warn = "WARNING: Found {} multiple ({}) time in student " +\
-                      "IDs.".format(id, len(idx))
+                      "IDs.".format(the_id, len(idx))
             print(warn)
-            return (None, warn)
+            return None, warn
 
 
 class SPSSResults(object):
@@ -130,4 +130,51 @@ class Registrations(object):
 
     def __iter__(self):
         return zip(self.df["id"], self.df["name"])
+
+
+def process_student(student_id,
+                    spss_results,
+                    student_ids,
+                    email_letter,
+                    email_subject,
+                    send_mail_object=None):
+    """
+    send_mail_object: DirectSMTP or EmailClient (if send via local email
+    client) otherwise it's a dryrun
+    """
+
+    erna, stud_name = student_ids.get(student_id)
+
+    #FIXME logging
+    if erna is not None:
+        if len(spss_results.get_row(student=erna)) != 1:
+            rtn = "WARNING: Can't find <{}> ".format(erna) + \
+                  "in SPSS data or id occurs multiple times."
+            print(rtn)
+            return rtn
+        else:
+            if stud_name is None:
+                body = email_letter.format("student")
+            else:
+                body = email_letter.format(stud_name)
+
+            body += "\n----\n" + \
+                    spss_results.grading_as_markdown(student=erna) + \
+                    "\nYour responses\n\n" + \
+                    spss_results.data_as_markdown(student=erna) +\
+                    "\n----\n"
+
+            to = erna + "@student.eur.nl"
+            if isinstance(send_mail_object, (EmailClient, DirectSMTP)):
+                send_mail_object.send_mail(recipient_email=to,
+                                                subject=email_subject,
+                                                body=body)
+
+            return "NAME: {}\nTO: {}\nSUBJECT: {}\n\n".format(
+                        stud_name, to, email_subject) +\
+                        body
+    else: # erna==None
+        return stud_name # stud_name contains warning
+
+
 

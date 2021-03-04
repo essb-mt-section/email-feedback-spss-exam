@@ -1,9 +1,8 @@
 import PySimpleGUI as _sg
 
-from .data_files import SPSSResults, StudentIDs, Registrations
-from .process import process_student
-from .send_mail import DirectSMTP
-
+from ._main import SPSSResults, StudentIDs, Registrations, process_student
+from ._send_mail import DirectSMTP
+from . import APPNAME, __version__
 
 def run(email_letter, email_subject, send_mail_object):
     _sg.theme('SystemDefault1')
@@ -45,7 +44,7 @@ def run(email_letter, email_subject, send_mail_object):
          _sg.Cancel(size=(12, 2))]
     )
 
-    window = _sg.Window('SPSS Email feedback'.format(), layout)
+    window = _sg.Window("{} ({})".format(APPNAME, __version__), layout)
 
     while True:
         e, v = window.read()
