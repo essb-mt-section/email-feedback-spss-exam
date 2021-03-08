@@ -191,7 +191,7 @@ def settings_window(settings, mail_sender):
             for key in ["body", "subject", "sender_email", "user",
                         "smtp_server"]:
                 if key == "body":
-                    values[key].strip() + "\n"
+                    values[key] = values[key].strip() + "\n"
                 s_dict[key] = values[key]
             settings.save()
 
