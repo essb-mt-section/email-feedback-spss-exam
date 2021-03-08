@@ -14,12 +14,13 @@ responses you gave and the correct answers.
 Oliver Lindemann
 """
 
-SETTINGS_EMAIL={
+SETTINGS={
     "body": BODY,
     "subject": "SPSS Feedback",
     "sender_email": "lindemann@essb.eur.nl",
     "user": "63596oli@eur.nl",
     "smtp_server": "smtp.office365.com",
-    "direct_smtp": True
+    "last_folder": None
 }
+
 

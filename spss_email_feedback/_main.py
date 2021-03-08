@@ -4,7 +4,7 @@ from ._format import MarkdownTable
 from ._send_mail import DirectSMTP, EmailClient
 
 class StudentIDs(object):
-    def __init__(self, file, sep="\t", col_names=("id", "name", "xx")):
+    def __init__(self, file):
         """A list of all student IDs and Student names as tsv with column
         "name" and "id"
 
@@ -12,8 +12,17 @@ class StudentIDs(object):
                         names, set col_names=None
         """
 
-        self.df = pd.read_csv(file, sep=sep,
-                              names=col_names)
+        REQUIRED_COLS =  ['id', 'name']
+        try:
+            df = pd.read_csv(file, sep=",")
+            self.df = df[REQUIRED_COLS]
+        except:
+            try:
+                df = pd.read_csv(file, sep="\t")
+                self.df = df[REQUIRED_COLS]
+            except:
+                raise RuntimeError("Student ID file not in good shape.")
+
 
     def find_id(self, the_id):
         """returns indices
@@ -116,7 +125,7 @@ class SPSSResults(object):
 
 class Registrations(object):
 
-    def __init__(self, file, col_name="Name", col_id="Student ID"):
+    def __init__(self, file, col_id="Student ID"):
         """iteration object for the registrations
 
         reads a csv file with the registered students (names and ids).
@@ -125,11 +134,12 @@ class Registrations(object):
         :param col_id: column the contains the student id
         """
 
-        self.df = pd.read_csv(file, sep=",")
-        self.df.rename(columns={col_name: "name", col_id: "id"}, inplace=True)
+        df = pd.read_csv(file, sep=",")
+        self.ids = list(df.loc[:, col_id])
+
 
     def __iter__(self):
-        return zip(self.df["id"], self.df["name"])
+        return iter(self.ids)
 
 
 def process_student(student_id,
@@ -137,7 +147,7 @@ def process_student(student_id,
                     student_ids,
                     email_letter,
                     email_subject,
-                    send_mail_object=None):
+                    mail_sender=None):
     """
     send_mail_object: DirectSMTP or EmailClient (if send via local email
     client) otherwise it's a dryrun
@@ -164,11 +174,11 @@ def process_student(student_id,
                     spss_results.data_as_markdown(student=erna) +\
                     "\n----\n"
 
-            to = erna + "@student.eur.nl"
-            if isinstance(send_mail_object, (EmailClient, DirectSMTP)):
-                send_mail_object.send_mail(recipient_email=to,
-                                                subject=email_subject,
-                                                body=body)
+            to = erna + "@student.eur.nl" # TODO eur email could be in settings
+            if isinstance(mail_sender, (EmailClient, DirectSMTP)):
+                mail_sender.send_mail(recipient_email=to,
+                                      subject=email_subject,
+                                      body=body)
 
             return "NAME: {}\nTO: {}\nSUBJECT: {}\n\n".format(
                         stud_name, to, email_subject) +\

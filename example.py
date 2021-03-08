@@ -15,16 +15,16 @@ if __name__ == "__main__":
 
     ## single subject
     rtn = sef.process_student(student_id=552324,
-                                spss_results=spss_results,
-                                student_ids=ids,
-                                email_letter=sef.settings.body,
-                                email_subject=sef.settings.subject,
-                                send_mail_object=sef.EmailClient()) # dry run,
+                              spss_results=spss_results,
+                              student_ids=ids,
+                              email_letter=sef.settings.body,
+                              email_subject=sef.settings.subject,
+                              mail_sender=None) # dry run,
     # else send_mail_object=sef.EmailClient() or sef.DirectSMTP(...)
 
     ## or multiple subjects using registration file
-    # for student_id, reg_name in registrations:
-    #    print("Process {0} ({1})".format(student_id, reg_name))
+    # for student_id in registrations:
+    #    print("Process {0}".format(student_id))
     #    sef.process_student(student_id=student_id,
     #                        spss_results=spss_results,
     #                        student_ids=ids,

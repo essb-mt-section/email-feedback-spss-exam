@@ -9,8 +9,15 @@ except:
     MailComposer = None
 
 
-class EmailClient(object):
+class DryRun(object):
+    LABEL = "Dry Run"
 
+    def send_mail(self, recipient_email, subject, body):
+        #print("TO: {}\SUBJECT:{}\n{}".format(recipient_email, subject, body))
+        pass
+
+class EmailClient(object):
+    LABEL = "via email client"
     def __init__(self, body_format="html"):
         if MailComposer is None:
             raise RuntimeError("Please install 'mailcomposer' via pip")
@@ -23,8 +30,8 @@ class EmailClient(object):
         mc.body = txt.replace("\n", "")
         mc.display()
 
-
 class DirectSMTP(object):
+    LABEL = "directly via SMTP"
 
     def __init__(self, smtp_server, user, sender_address, password=None):
         self.smtp_server = smtp_server
