@@ -16,6 +16,7 @@ class DryRun(object):
         #print("TO: {}\SUBJECT:{}\n{}".format(recipient_email, subject, body))
         pass
 
+
 class EmailClient(object):
     LABEL = "via email client"
     def __init__(self, body_format="html"):

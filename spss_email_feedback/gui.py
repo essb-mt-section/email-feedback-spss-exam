@@ -1,5 +1,4 @@
 from os import path
-
 import PySimpleGUI as _sg
 
 from ._main import SPSSResults, StudentIDs, Registrations, process_student

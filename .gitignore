@@ -39,10 +39,9 @@ nosetests.xml
 # PyPi
 .pypirc
 
-data/
-events/
 log/
 _build/
+venv/
 
 # backup file
 .bak
