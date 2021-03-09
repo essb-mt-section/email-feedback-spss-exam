@@ -52,6 +52,13 @@ class StudentIDs(object):
             print(warn)
             return None, warn
 
+    @property
+    def ids(self):
+        return self.df['id']
+
+    @property
+    def names(self):
+        return self.df['names']
 
 class SPSSResults(object):
 

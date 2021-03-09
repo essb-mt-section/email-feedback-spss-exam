@@ -1,7 +1,7 @@
 from os import path
 import PySimpleGUI as _sg
-
-from ._main import SPSSResults, StudentIDs, Registrations, process_student
+import pandas as pd
+from ._main import SPSSResults, StudentIDs, process_student
 from ._send_mail import DirectSMTP, DryRun, EmailClient
 from . import APPNAME, __version__, settings
 
@@ -12,11 +12,10 @@ def run():
     _sg.theme('SystemDefault1')
     layout = []
     layout.append([_sg.Frame('Files',
-                             [[_sg.Text("All student IDs (tsv):", size=(20,
-                                                                         1)),
+                             [[_sg.Text("All student IDs (csv):", size=(20,1)),
                                _sg.InputText(
                                    "", size=(60, 1),
-                                   key="fl_student_id"),
+                                   key='fl_student_id'),
                                _sg.FileBrowse(size=(6, 1),
                                               initial_folder = settings.last_folder)],
                               [_sg.Text("SPSS result file (csv):", size=(20,
@@ -29,19 +28,22 @@ def run():
                                         file_types=(("*.csv", "*.csv"),))
                                ]])])
 
-    layout.append([_sg.Frame('For which student(s)?',
-                             [[_sg.Text("Single student ID:", size=(20, 1)),
-                               _sg.InputText(
-                                   "", size=(10, 1), key="single_id")],
-                              [_sg.Text("or registration file (csv):", size=(20,
-                                                                         1)),
-                               _sg.InputText(
-                                   "", size=(60, 1),
-                                   key="fl_registrations"),
-                               _sg.FileBrowse(size=(6, 1),
+    txt_regs = _sg.Multiline(default_text="", size=(90, 5),
+                             key="registrations", enable_events=True)
+    txt_n_selected = _sg.Text("", size=(40, 1))
+    layout.append([_sg.Frame('Selected student(s) (comma-separated list)',
+                             [[txt_regs],
+                              [_sg.Button(button_text="clear", key="reg_clear"),
+                               _sg.Button(button_text="all", key="reg_all"),
+                               _sg.Input(key="reg_file", enable_events=True,
+                                         visible=False),
+                               _sg.FileBrowse(button_text="from csv file",
+                                            target="reg_file",
+                                            size=(10, 1),
                                             initial_folder=settings.last_folder,
-                                            file_types=(("*.csv","*.csv"),))
-                            ]]
+                                            file_types=(("*.csv","*.csv"),)),
+                               txt_n_selected]
+                              ]
                              )])
 
     send_button = _sg.Button(button_text=mail_sender.LABEL,
@@ -57,12 +59,12 @@ def run():
     )
 
     window = _sg.Window("{} ({})".format(APPNAME, __version__), layout)
-
+    old_selected = None
     while True:
-        e, v = window.read()
+        e, v = window.read(timeout=500)
         window.Refresh()
 
-        if e == "Cancel":
+        if e == "Cancel" or e is None:
             break
 
         try:
@@ -76,18 +78,24 @@ def run():
         except:
             spss_results = None
 
-        try:
-            registrations = Registrations(file=v["fl_registrations"])
-        except:
-            registrations = None
 
         if e == "view":
             if ids is not None:
                 _sg.Print("Student IDs\n", ids.df)
             if spss_results is not None:
                 _sg.Print("\n\nSPSS results\n", spss_results.df)
-            if registrations is not None:
-                _sg.Print("\n\nRegistrations\n", registrations.ids)
+
+        elif e == "reg_file":
+            lst = registration_file_window(v["reg_file"])
+            txt_regs.update(value=_lst2csv(lst))
+
+        elif e == "reg_clear":
+            txt_regs.update(value="")
+
+        elif e == "reg_all":
+            if ids is not None:
+                txt_regs.update(value=_lst2csv(ids.ids))
+
 
         elif e == "email":
             settings, mail_sender = settings_window(settings, mail_sender)
@@ -97,11 +105,10 @@ def run():
                 send_button.update(text="send " + mail_sender.LABEL)
 
         elif e == "send":
-            single_id = v["single_id"]
-
+            regs = _csv2lst(txt_regs.get())
             dryrun = isinstance(mail_sender, DryRun)
-            if len(single_id) > 1:
-                fb = process_student(student_id=single_id,
+            if len(regs) == 1:
+                fb = process_student(student_id=regs[0],
                                      spss_results=spss_results,
                                      student_ids=ids,
                                      email_letter=settings.body,
@@ -113,8 +120,8 @@ def run():
                     _sg.Print(fb) # TODO always output
                     #todo maybe loggin here
 
-            elif registrations is not None:
-                for stud_id in registrations:
+            elif len(regs) >1:
+                for stud_id in regs:
                     _sg.Print("\nProcess {0}".format(stud_id))
                     fb = process_student(student_id=stud_id,
                                          spss_results=spss_results,
@@ -132,21 +139,32 @@ def run():
                         elif len(fb) > 50:
                             _sg.Print("...")
 
-
-
-        else:
-            break
+        elif e == "__TIMEOUT__":
+            if txt_regs.get() != old_selected:
+                old_selected = txt_regs.get()
+                lst = _csv2lst(old_selected)
+                txt_n_selected.update(value="Selected: {}".format(len(lst)))
 
     if isinstance(mail_sender, DirectSMTP) and \
             mail_sender.is_logged_in:
         mail_sender.close()
 
-    if path.isfile(v["fl_spss"]):
-        settings.last_folder = path.split(v["fl_spss"])[0]
+    try:
+        if path.isfile(v["fl_spss"]):
+            settings.last_folder = path.split(v["fl_spss"])[0]
+    except:
+        pass
 
     window.close()
     settings.save()
     return
+
+def _csv2lst(csv):
+    return list(filter(lambda x: len(x),
+                       map(lambda x: x.strip(), csv.split(","))))
+
+def _lst2csv(lst):
+    return ", ".join(map(str, lst))
 
 def _entry(text, key, settings_dict):
     return [_sg.Text(text +":", size=(10, 1)),
@@ -227,3 +245,25 @@ def settings_window(settings, mail_sender):
 
     window.close()
     return settings, mail_sender
+
+
+def registration_file_window(reg_file):
+    _sg.theme('SystemDefault1')
+    df = pd.read_csv(reg_file, sep=",")
+
+    layout = [[_sg.Frame('{}'.format(path.split(reg_file)[1]), [
+        [_sg.Text("Select ID column:", size=(15, 1)),
+         _sg.Combo(values=list(df.columns), size=(10, 1),
+                   key="column")]])],
+              [_sg.OK(size=(10, 1))]
+              ]
+
+    window = _sg.Window("Registration file", layout)
+    e, v = window.read()
+    window.close()
+    try:
+        return list(df.loc[:, v["column"]])
+    except:
+        return None
+
+
