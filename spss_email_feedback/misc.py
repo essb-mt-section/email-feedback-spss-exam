@@ -55,3 +55,10 @@ class MarkdownTable(object):
                 rtn = rtn[:-1] + "\n"
                 header = False
         return rtn
+
+def csv2lst(csv):
+    return list(filter(lambda x: len(x),
+                       map(lambda x: x.strip(), csv.split(","))))
+
+def lst2csv(lst):
+    return ", ".join(map(str, lst))

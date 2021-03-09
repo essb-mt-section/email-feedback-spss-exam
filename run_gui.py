@@ -2,5 +2,5 @@
 """O. Lindemann"""
 
 if __name__ == "__main__":
-    from spss_email_feedback import gui
-    gui.run()
+    import spss_email_feedback
+    spss_email_feedback.run()

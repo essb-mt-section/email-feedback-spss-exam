@@ -1,7 +1,7 @@
 import pandas as pd
 
-from ._format import MarkdownTable
-from ._send_mail import DirectSMTP, EmailClient
+from .misc import MarkdownTable
+from .send_mail import DirectSMTP, EmailClient
 
 class StudentIDs(object):
     def __init__(self, file):

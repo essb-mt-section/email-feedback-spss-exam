@@ -1,9 +1,10 @@
 from os import path
 import PySimpleGUI as _sg
 import pandas as pd
-from ._main import SPSSResults, StudentIDs, process_student
-from ._send_mail import DirectSMTP, DryRun, EmailClient
+from .main import SPSSResults, StudentIDs, process_student
+from .send_mail import DirectSMTP, DryRun, EmailClient
 from . import APPNAME, __version__, settings
+from .misc import csv2lst, lst2csv
 
 def run():
     global settings
@@ -87,14 +88,14 @@ def run():
 
         elif e == "reg_file":
             lst = registration_file_window(v["reg_file"])
-            txt_regs.update(value=_lst2csv(lst))
+            txt_regs.update(value=lst2csv(lst))
 
         elif e == "reg_clear":
             txt_regs.update(value="")
 
         elif e == "reg_all":
             if ids is not None:
-                txt_regs.update(value=_lst2csv(ids.ids))
+                txt_regs.update(value=lst2csv(ids.ids))
 
 
         elif e == "email":
@@ -105,7 +106,7 @@ def run():
                 send_button.update(text="send " + mail_sender.LABEL)
 
         elif e == "send":
-            regs = _csv2lst(txt_regs.get())
+            regs = csv2lst(txt_regs.get())
             dryrun = isinstance(mail_sender, DryRun)
             if len(regs) == 1:
                 fb = process_student(student_id=regs[0],
@@ -142,7 +143,7 @@ def run():
         elif e == "__TIMEOUT__":
             if txt_regs.get() != old_selected:
                 old_selected = txt_regs.get()
-                lst = _csv2lst(old_selected)
+                lst = csv2lst(old_selected)
                 txt_n_selected.update(value="Selected: {}".format(len(lst)))
 
     if isinstance(mail_sender, DirectSMTP) and \
@@ -158,13 +159,6 @@ def run():
     window.close()
     settings.save()
     return
-
-def _csv2lst(csv):
-    return list(filter(lambda x: len(x),
-                       map(lambda x: x.strip(), csv.split(","))))
-
-def _lst2csv(lst):
-    return ", ".join(map(str, lst))
 
 def _entry(text, key, settings_dict):
     return [_sg.Text(text +":", size=(10, 1)),
