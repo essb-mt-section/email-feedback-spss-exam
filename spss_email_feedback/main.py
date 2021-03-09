@@ -67,13 +67,14 @@ class SPSSResults(object):
         export csv with details
         """
 
-        self.df = pd.read_csv(file, sep=";", dtype=str)
+        self.df = pd.read_csv(file, sep=";", dtype=str, encoding='cp1252')
         self.n_questions = 0
         for x in self.df.columns:
             if x.endswith("vraag") and x.startswith("v_"):
                 self.n_questions += 1
 
     def get_row(self, student):
+        # allows emails, erna, student id
         student = str(student)[:6] # erna without letters
         return self.df.loc[self.df['student'] == student]
 
@@ -128,6 +129,28 @@ class SPSSResults(object):
         txt += "Students: {}\n".format(len(self.df))
         txt += "Moments: {}".format(pd.unique(self.df['moment']))
         return txt
+
+    def email(self, student, domain="@student.eur.nl"):
+        row = self.get_row(student)
+        if len(row)==0:
+            return None
+        else:
+            return row["erna"].iloc[0] + domain
+
+    def full_name(self, student):
+        row = self.get_row(student)
+        if len(row)==0:
+            return None
+        else:
+            rtn = ""
+            for col in ["voornaam", "tussenvoegsel", "achternaam"]:
+                try:
+                    rtn += row[col].iloc[0] + " "
+                except:
+                    pass
+
+        return rtn.strip()
+
 
 
 def process_student(student_id,
