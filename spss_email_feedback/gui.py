@@ -74,8 +74,7 @@ def run():
             ids = None
 
         try:
-            spss_results = SPSSResults(file=v["fl_spss"],
-                                       n_questions=20)
+            spss_results = SPSSResults(file=v["fl_spss"])
         except:
             spss_results = None
 

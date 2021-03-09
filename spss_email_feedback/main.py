@@ -62,46 +62,27 @@ class StudentIDs(object):
 
 class SPSSResults(object):
 
-    def __init__(self, file, n_questions=20):
+    def __init__(self, file):
         """Reading SPSS of the webteam,
         export csv with details
         """
 
-        self.n_questions = n_questions
         self.df = pd.read_csv(file, sep=";", dtype=str)
-
-        # rename and selecting only relevant data
-        rename = {}
-        for rn in self.df.columns:
-            if rn.endswith("_antw"):
-                rename[rn] = rn.replace("_antw", "").replace(
-                    "v_", "your_response_")
-            elif rn.endswith("_juist"):
-                rename[rn] = rn.replace("_juist", "").replace(
-                    "v_", "correct_")
-            elif rn == "totaal":
-                rename[rn] = "score"
-            elif rn != "student":
-                self.df = self.df.drop(rn, 1)
-        self.df.rename(columns=rename, inplace=True)
+        self.n_questions = 0
+        for x in self.df.columns:
+            if x.endswith("vraag") and x.startswith("v_"):
+                self.n_questions += 1
 
     def get_row(self, student):
         student = str(student)[:6] # erna without letters
         return self.df.loc[self.df['student'] == student]
-
-    def get_data_dict(self, student):
-        """returns data renamed"""
-        row = self.get_row(student)
-        if len(row) == 0:
-            return {}
-        return row.to_dict(orient="list")
 
     def get_score(self, student):
         row = self.get_row(student)
         if len(row) == 0:
             return None
         else:
-            return int(row["score"])
+            return int(row["totaal"])
 
     def grade_from_score(self, score, guessing_score=0, max_grade=10,
                          ndigits=1):
@@ -109,15 +90,28 @@ class SPSSResults(object):
                       (self.n_questions - guessing_score) * max_grade,
                       ndigits=ndigits))
 
+
+    def get_answers(self, student):
+        row = self.get_row(student)
+        if len(row) == 0:
+            return None
+
+        dd =  row.to_dict(orient="list")
+        data=[]
+        for x in range(1, self.n_questions+1):
+            data.append([x, dd["v_{}_antw".format(x)][0],
+                        dd["v_{}_juist".format(x)][0]])
+
+        return pd.DataFrame(data, columns=["Question", "Answer", "Correct"])
+
     def answers_as_markdown(self, student):
-        data = self.get_data_dict(student)
-        if len(data)==0:
+        answers = self.get_answers(student)
+        if answers is None:
             return ""
 
-        md = MarkdownTable(["Questions", "Response", "Correct"])
-        for x in range(1, self.n_questions+1):
-            md.add_row([x, data["your_response_{}".format(x)][0],
-                        data["correct_{}".format(x)][0]])
+        md = MarkdownTable(list(answers.columns))
+        for _, data in answers.iterrows():
+            md.add_row(list(data))
         return str(md)
 
     def totalscore_as_markdown(self, student):
@@ -129,23 +123,11 @@ class SPSSResults(object):
         md.add_row([student, score, self.grade_from_score(score=score)])
         return str(md)
 
-class Registrations(object):
-
-    def __init__(self, file, col_id="Student ID"):
-        """iteration object for the registrations
-
-        reads a csv file with the registered students (names and ids).
-        :param file: csv-file with column names
-        :param col_name: column the contains the student name
-        :param col_id: column the contains the student id
-        """
-
-        df = pd.read_csv(file, sep=",")
-        self.ids = list(df.loc[:, col_id])
-
-
-    def __iter__(self):
-        return iter(self.ids)
+    def overview(self):
+        txt = "Questions: {}\n".format(self.n_questions)
+        txt += "Students: {}\n".format(len(self.df))
+        txt += "Moments: {}".format(pd.unique(self.df['moment']))
+        return txt
 
 
 def process_student(student_id,
