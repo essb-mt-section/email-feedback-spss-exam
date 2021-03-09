@@ -19,6 +19,8 @@ if __name__ == "__main__":
                               student_ids=ids,
                               email_letter=sef.settings.body,
                               email_subject=sef.settings.subject,
+                              feedback_answers=sef.settings.feedback_answers,
+                              feedback_total_scores=sef.settings.feedback_total_scores,
                               mail_sender=None) # dry run,
     # else send_mail_object=sef.EmailClient() or sef.DirectSMTP(...)
 

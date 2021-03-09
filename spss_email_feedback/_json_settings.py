@@ -18,7 +18,7 @@ class JSONSettings():
 
         self.config_dir = user_config_dir(appname=appname)
         try:
-            os.mkdir(self.config_dir)
+            os.makedirs(self.config_dir)
         except:
             pass
         self.settings_file = os.path.join(self.config_dir, settings_file_name)

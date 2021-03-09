@@ -20,7 +20,9 @@ SETTINGS={
     "sender_email": "lindemann@essb.eur.nl",
     "user": "63596oli@eur.nl",
     "smtp_server": "smtp.office365.com",
-    "last_folder": None
+    "last_folder": None,
+    "feedback_total_scores": False,
+    "feedback_answers": True,
 }
 
 

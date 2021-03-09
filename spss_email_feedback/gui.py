@@ -106,6 +106,8 @@ def run():
                                      student_ids=ids,
                                      email_letter=settings.body,
                                      email_subject=settings.subject,
+                                     feedback_answers=settings.feedback_answers,
+                                     feedback_total_scores=settings.feedback_total_scores,
                                      mail_sender=mail_sender)
                 if dryrun:
                     _sg.Print(fb) # TODO always output
@@ -119,6 +121,8 @@ def run():
                                          student_ids=ids,
                                          email_letter=settings.body,
                                          email_subject=settings.subject,
+                                         feedback_answers=settings.feedback_answers,
+                                         feedback_total_scores=settings.feedback_total_scores,
                                          mail_sender=mail_sender)
 
                     if dryrun:
@@ -167,7 +171,13 @@ def settings_window(settings, mail_sender):
                     _entry("Sender", "sender_email", s_dict),
                     [_sg.Multiline(default_text=s_dict["body"],
                                    size=(80, 15),
-                                   key="body")]
+                                   key="body")],
+                    [_sg.Checkbox("Feedback total scores",
+                                  key="feedback_total_scores",
+                                  default=s_dict["feedback_total_scores"]),
+                     _sg.Checkbox("Feedback all answers",
+                                  key="feedback_answers",
+                                  default=s_dict["feedback_answers"])]
                     ])])
 
 
@@ -189,7 +199,7 @@ def settings_window(settings, mail_sender):
         if event=="Save":
 
             for key in ["body", "subject", "sender_email", "user",
-                        "smtp_server"]:
+                        "smtp_server", "feedback_answers", "feedback_total_scores"]:
                 if key == "body":
                     values[key] = values[key].strip() + "\n"
                 s_dict[key] = values[key]

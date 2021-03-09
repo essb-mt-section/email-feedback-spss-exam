@@ -102,7 +102,7 @@ class SPSSResults(object):
                       (self.n_questions - guessing_score) * max_grade,
                       ndigits=ndigits))
 
-    def data_as_markdown(self, student):
+    def answers_as_markdown(self, student):
         data = self.get_data_dict(student)
         if len(data)==0:
             return ""
@@ -113,7 +113,7 @@ class SPSSResults(object):
                         data["correct_{}".format(x)][0]])
         return str(md)
 
-    def grading_as_markdown(self, student):
+    def totalscore_as_markdown(self, student):
         score = self.get_score(student)
         if score is None:
             return ""
@@ -121,7 +121,6 @@ class SPSSResults(object):
         md = MarkdownTable(["Student", "Score", "Grade"])
         md.add_row([student, score, self.grade_from_score(score=score)])
         return str(md)
-
 
 class Registrations(object):
 
@@ -147,6 +146,8 @@ def process_student(student_id,
                     student_ids,
                     email_letter,
                     email_subject,
+                    feedback_answers,
+                    feedback_total_scores,
                     mail_sender=None):
     """
     send_mail_object: DirectSMTP or EmailClient (if send via local email
@@ -168,11 +169,15 @@ def process_student(student_id,
             else:
                 body = email_letter.format(stud_name)
 
-            body += "\n----\n" + \
-                    spss_results.grading_as_markdown(student=erna) + \
-                    "\nYour responses\n\n" + \
-                    spss_results.data_as_markdown(student=erna) +\
-                    "\n----\n"
+            body += "\n----\n"
+            if feedback_total_scores:
+                body += spss_results.totalscore_as_markdown(student=erna)
+            else:
+                body += "Student id: {}".format(erna)
+            if feedback_answers:
+                body += "\nYour responses\n\n" + \
+                    spss_results.answers_as_markdown(student=erna)
+            body += "\n----\n"
 
             to = erna + "@student.eur.nl" # TODO eur email could be in settings
             if isinstance(mail_sender, (EmailClient, DirectSMTP)):
