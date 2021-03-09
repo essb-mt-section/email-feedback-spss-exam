@@ -1,77 +1,46 @@
+from os import path
 import pandas as pd
 
 from .misc import MarkdownTable
 from .send_mail import DirectSMTP, EmailClient
 
-class StudentIDs(object):
-    def __init__(self, file):
-        """A list of all student IDs and Student names as tsv with column
-        "name" and "id"
-
-        :param col_names: defines column names. To use first row as column
-                        names, set col_names=None
-        """
-
-        REQUIRED_COLS =  ['id', 'name']
-        try:
-            df = pd.read_csv(file, sep=",")
-            self.df = df[REQUIRED_COLS]
-        except:
-            try:
-                df = pd.read_csv(file, sep="\t")
-                self.df = df[REQUIRED_COLS]
-            except:
-                raise RuntimeError("Student ID file not in good shape.")
-
-
-    def find_id(self, the_id):
-        """returns indices
-        """
-
-        str_id = str(the_id)[:8].lower() # erna if email
-        idx = []
-        for c, x in enumerate(self.df['id']):
-            if x.find(str_id)>-1:
-                idx.append(c)
-        return idx
-
-    def get(self, the_id):
-        """returns (id, name) or (None, warning text)
-        """
-
-        idx = self.find_id(the_id)
-        if len(idx) == 1:
-            return (self.df.loc[idx[0]]['id'],
-                    self.df.loc[idx[0]]['name'])
-        else:
-            if len(idx) == 0:
-                warn = "WARNING: Can't find {} in student IDs .".format(the_id)
-            else:
-                warn = "WARNING: Found {} multiple ({}) time in student " +\
-                      "IDs.".format(the_id, len(idx))
-            print(warn)
-            return None, warn
-
-    @property
-    def ids(self):
-        return self.df['id']
-
-    @property
-    def names(self):
-        return self.df['names']
-
 class SPSSResults(object):
 
     def __init__(self, file):
         """Reading SPSS of the webteam,
-        export csv with details
+        export csv with details advanced, include erna voornaam tussenvoegsel achternaam
         """
 
+        self.filename = path.split(file)[1]
         self.df = pd.read_csv(file, sep=";", dtype=str, encoding='cp1252')
         self.n_questions = 0
         for x in self.df.columns:
             if x.endswith("vraag") and x.startswith("v_"):
                 self.n_questions += 1
+
+        self.missing_columns = []
+        if self.n_questions == 0:
+            self.missing_columns.append("questions")
+        #check further required variables
+        for required in ["totaal", "student", "erna",  "voornaam",
+                         "tussenvoegsel","achternaam"]:
+            if required not in self.df.columns:
+                self.missing_columns.append(required)
+
+    @property
+    def is_incomplete(self):
+        return len(self.missing_columns)>0
+
+    @property
+    def student_ids(self):
+        return list(self.df['student'])
+
+    def find_student_ids(self, pattern):
+        """returns iterator over all matching ids
+        """
+
+        str_id = str(pattern)[:6].lower() # first numbers if erna or email
+        return filter(lambda x: x.find(str_id)>=0, self.df['student'])
 
     def get_row(self, student):
         # allows emails, erna, student id
@@ -130,14 +99,17 @@ class SPSSResults(object):
         txt += "Moments: {}".format(pd.unique(self.df['moment']))
         return txt
 
-    def email(self, student, domain="@student.eur.nl"):
+    def get_email(self, student, domain="@student.eur.nl"):
         row = self.get_row(student)
         if len(row)==0:
             return None
         else:
-            return row["erna"].iloc[0] + domain
+            try:
+                return row["erna"].iloc[0] + domain
+            except:
+                return None
 
-    def full_name(self, student):
+    def get_full_name(self, student):
         row = self.get_row(student)
         if len(row)==0:
             return None
@@ -155,7 +127,6 @@ class SPSSResults(object):
 
 def process_student(student_id,
                     spss_results,
-                    student_ids,
                     email_letter,
                     email_subject,
                     feedback_answers,
@@ -165,13 +136,13 @@ def process_student(student_id,
     send_mail_object: DirectSMTP or EmailClient (if send via local email
     client) otherwise it's a dryrun
     """
+    assert(isinstance(spss_results, SPSSResults))
+    stud_name = spss_results.get_full_name(student_id)
+    email_address = spss_results.get_email(student_id)
 
-    erna, stud_name = student_ids.get(student_id)
-
-    #FIXME logging
-    if erna is not None:
-        if len(spss_results.get_row(student=erna)) != 1:
-            rtn = "WARNING: Can't find <{}> ".format(erna) + \
+    if email_address is not None:
+        if len(spss_results.get_row(student=student_id)) != 1:
+            rtn = "WARNING: Can't find <{}> ".format(student_id) + \
                   "in SPSS data or id occurs multiple times."
             print(rtn)
             return rtn
@@ -183,22 +154,21 @@ def process_student(student_id,
 
             body += "\n----\n"
             if feedback_total_scores:
-                body += spss_results.totalscore_as_markdown(student=erna)
+                body += spss_results.totalscore_as_markdown(student=student_id)
             else:
-                body += "Student id: {}".format(erna)
+                body += "Student id: {}".format(student_id)
             if feedback_answers:
                 body += "\nYour responses\n\n" + \
-                    spss_results.answers_as_markdown(student=erna)
+                    spss_results.answers_as_markdown(student=student_id)
             body += "\n----\n"
 
-            to = erna + "@student.eur.nl" # TODO eur email could be in settings
             if isinstance(mail_sender, (EmailClient, DirectSMTP)):
-                mail_sender.send_mail(recipient_email=to,
+                mail_sender.send_mail(recipient_email=email_address,
                                       subject=email_subject,
                                       body=body)
 
             return "NAME: {}\nTO: {}\nSUBJECT: {}\n\n".format(
-                        stud_name, to, email_subject) +\
+                        stud_name, email_address, email_subject) +\
                         body
     else: # erna==None
         return stud_name # stud_name contains warning

@@ -1,7 +1,7 @@
 from os import path
 import PySimpleGUI as _sg
 import pandas as pd
-from .main import SPSSResults, StudentIDs, process_student
+from .main import SPSSResults, process_student
 from .send_mail import DirectSMTP, DryRun, EmailClient
 from . import APPNAME, __version__, settings
 from .misc import csv2lst, lst2csv
@@ -12,18 +12,12 @@ def run():
 
     _sg.theme('SystemDefault1')
     layout = []
-    layout.append([_sg.Frame('Files',
-                             [[_sg.Text("All student IDs (csv):", size=(20,1)),
-                               _sg.InputText(
-                                   "", size=(60, 1),
-                                   key='fl_student_id'),
-                               _sg.FileBrowse(size=(6, 1),
-                                              initial_folder = settings.last_folder)],
-                              [_sg.Text("SPSS result file (csv):", size=(20,
-                                                                         1)),
-                               _sg.InputText(
-                                   "", size=(60, 1),
-                                   key="fl_spss"),
+    input_fl_spss = _sg.InputText("", size=(60, 1), enable_events=True,
+                                   key="fl_spss")
+    layout.append([_sg.Frame('Result File',
+                             [[_sg.Text("SPSS result file (csv):",
+                                        size=(20, 1)),
+                               input_fl_spss,
                                _sg.FileBrowse(size=(6, 1),
                                         initial_folder = settings.last_folder,
                                         file_types=(("*.csv", "*.csv"),))
@@ -32,7 +26,7 @@ def run():
     txt_regs = _sg.Multiline(default_text="", size=(90, 5),
                              key="registrations", enable_events=True)
     txt_n_selected = _sg.Text("", size=(40, 1))
-    layout.append([_sg.Frame('Selected student(s) (comma-separated list)',
+    layout.append([_sg.Frame('Selected student IDs (comma-separated list)',
                              [[txt_regs],
                               [_sg.Button(button_text="clear", key="reg_clear"),
                                _sg.Button(button_text="all", key="reg_all"),
@@ -47,7 +41,7 @@ def run():
                               ]
                              )])
 
-    send_button = _sg.Button(button_text=mail_sender.LABEL,
+    btn_send = _sg.Button(button_text=mail_sender.LABEL,
                              key="send", size=(20, 2),
                              visible=True)
 
@@ -55,12 +49,13 @@ def run():
         [_sg.Button("View Data", key="view", size=(14, 2)),
          _sg.Button("Email Settings", key="email", size=(14, 2),
                     visible=True),
-         send_button,
+         btn_send,
          _sg.Cancel(size=(12, 2))]
     )
 
     window = _sg.Window("{} ({})".format(APPNAME, __version__), layout)
     old_selected = None
+    spss_results = None
     while True:
         e, v = window.read(timeout=500)
         window.Refresh()
@@ -68,22 +63,28 @@ def run():
         if e == "Cancel" or e is None:
             break
 
-        try:
-            ids = StudentIDs(file=v["fl_student_id"])
-        except:
-            ids = None
+        elif e == "fl_spss":
+            try:
+                spss_results = SPSSResults(file=v["fl_spss"])
+            except:
+                spss_results = None
 
-        try:
-            spss_results = SPSSResults(file=v["fl_spss"])
-        except:
-            spss_results = None
+            if spss_results is not None and spss_results.is_incomplete:
+                _sg.Print("ERROR: {} is not usable result csv file.\n "
+                          "".format(spss_results.filename),
+                          "\nThe following columns are missing in the "
+                          "data file:", str(spss_results.missing_columns),
+                          "\n\nPlease use the export function **with "
+                          "details advanced** and selected all "
+                          "file additional variables.\n\n(c) Oliver "
+                          "Lindemann")
+                spss_results = None
+                input_fl_spss.update(value="")
 
-
-        if e == "view":
-            if ids is not None:
-                _sg.Print("Student IDs\n", ids.df)
+        elif e == "view":
             if spss_results is not None:
-                _sg.Print("\n\nSPSS results\n", spss_results.df)
+                _sg.Print("Data\n", spss_results.df, "\n")
+                _sg.Print(spss_results.overview())
 
         elif e == "reg_file":
             lst = registration_file_window(v["reg_file"])
@@ -93,24 +94,31 @@ def run():
             txt_regs.update(value="")
 
         elif e == "reg_all":
-            if ids is not None:
-                txt_regs.update(value=lst2csv(ids.ids))
-
+            if spss_results is not None:
+                txt_regs.update(value=lst2csv(spss_results.student_ids))
 
         elif e == "email":
             settings, mail_sender = settings_window(settings, mail_sender)
             if isinstance(mail_sender, DryRun):
-                send_button.update(text=mail_sender.LABEL)
+                btn_send.update(text=mail_sender.LABEL)
             else:
-                send_button.update(text="send " + mail_sender.LABEL)
+                btn_send.update(text="send " + mail_sender.LABEL)
 
         elif e == "send":
             regs = csv2lst(txt_regs.get())
             dryrun = isinstance(mail_sender, DryRun)
+            if isinstance(mail_sender, DirectSMTP) and len(regs)>0:
+                if not caution_window("Do you really want to send {} "
+                                  "emails?".format(len(regs))):
+                    continue
+
+            if spss_results is None:
+                _sg.popup_ok("No SPSS result file")
+                continue
+
             if len(regs) == 1:
                 fb = process_student(student_id=regs[0],
                                      spss_results=spss_results,
-                                     student_ids=ids,
                                      email_letter=settings.body,
                                      email_subject=settings.subject,
                                      feedback_answers=settings.feedback_answers,
@@ -125,7 +133,6 @@ def run():
                     _sg.Print("\nProcess {0}".format(stud_id))
                     fb = process_student(student_id=stud_id,
                                          spss_results=spss_results,
-                                         student_ids=ids,
                                          email_letter=settings.body,
                                          email_subject=settings.subject,
                                          feedback_answers=settings.feedback_answers,
@@ -138,6 +145,9 @@ def run():
                             _sg.Print("-"*80+"\n")
                         elif len(fb) > 50:
                             _sg.Print("...")
+
+            else:
+                _sg.popup_ok("No student IDs selected!")
 
         elif e == "__TIMEOUT__":
             if txt_regs.get() != old_selected:
@@ -163,6 +173,9 @@ def _entry(text, key, settings_dict):
     return [_sg.Text(text +":", size=(10, 1)),
             _sg.InputText(settings_dict[key], size=(40, 1), key=key)]
 
+def caution_window(message):
+    _sg.theme('DarkRed1')
+    return _sg.popup_yes_no(message, title="Caution")=="Yes"
 
 def settings_window(settings, mail_sender):
     _sg.theme('SystemDefault1')
