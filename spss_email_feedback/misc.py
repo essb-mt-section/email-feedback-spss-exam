@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def replace_multi_spaces(txt, replace_str):
     rtn = ""
     n_spaces = 0
@@ -56,9 +59,16 @@ class MarkdownTable(object):
                 header = False
         return rtn
 
+
 def csv2lst(csv):
     return list(filter(lambda x: len(x),
                        map(lambda x: x.strip(), csv.split(","))))
 
+
 def lst2csv(lst):
     return ", ".join(map(str, lst))
+
+
+def is_equal_after_rounding(a, b, decimals):
+    # TRUE if the a equals b after both numbers being rounded
+    return np.round(a, decimals=decimals) == np.round(b, decimals=decimals)

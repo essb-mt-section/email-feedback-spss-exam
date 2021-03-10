@@ -2,7 +2,6 @@ from os import path
 import pandas as pd
 
 from .misc import MarkdownTable
-from .send_mail import DirectSMTP, EmailClient
 
 class SPSSResults(object):
 
@@ -123,55 +122,6 @@ class SPSSResults(object):
 
         return rtn.strip()
 
-
-
-def process_student(student_id,
-                    spss_results,
-                    email_letter,
-                    email_subject,
-                    feedback_answers,
-                    feedback_total_scores,
-                    mail_sender=None):
-    """
-    send_mail_object: DirectSMTP or EmailClient (if send via local email
-    client) otherwise it's a dryrun
-    """
-    assert(isinstance(spss_results, SPSSResults))
-    stud_name = spss_results.get_full_name(student_id)
-    email_address = spss_results.get_email(student_id)
-
-    if email_address is not None:
-        if len(spss_results.get_row(student=student_id)) != 1:
-            rtn = "WARNING: Can't find <{}> ".format(student_id) + \
-                  "in SPSS data or id occurs multiple times."
-            print(rtn)
-            return rtn
-        else:
-            if stud_name is None:
-                body = email_letter.format("student")
-            else:
-                body = email_letter.format(stud_name)
-
-            body += "\n----\n"
-            if feedback_total_scores:
-                body += spss_results.totalscore_as_markdown(student=student_id)
-            else:
-                body += "Student id: {}".format(student_id)
-            if feedback_answers:
-                body += "\nYour responses\n\n" + \
-                    spss_results.answers_as_markdown(student=student_id)
-            body += "\n----\n"
-
-            if isinstance(mail_sender, (EmailClient, DirectSMTP)):
-                mail_sender.send_mail(recipient_email=email_address,
-                                      subject=email_subject,
-                                      body=body)
-
-            return "NAME: {}\nTO: {}\nSUBJECT: {}\n\n".format(
-                        stud_name, email_address, email_subject) +\
-                        body
-    else: # erna==None
-        return stud_name # stud_name contains warning
 
 
 

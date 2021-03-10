@@ -1,8 +1,8 @@
 from os import path
 import PySimpleGUI as _sg
 import pandas as pd
-from .main import SPSSResults, process_student
-from .send_mail import DirectSMTP, DryRun, EmailClient
+from .spss_results import SPSSResults
+from .send_mail import DirectSMTP, DryRun, EmailClient, send_feedback
 from . import APPNAME, __version__, settings
 from .misc import csv2lst, lst2csv
 
@@ -117,13 +117,13 @@ def run():
                 continue
 
             if len(regs) == 1:
-                fb = process_student(student_id=regs[0],
-                                     spss_results=spss_results,
-                                     email_letter=settings.body,
-                                     email_subject=settings.subject,
-                                     feedback_answers=settings.feedback_answers,
-                                     feedback_total_scores=settings.feedback_total_scores,
-                                     mail_sender=mail_sender)
+                fb = send_feedback(student_id=regs[0],
+                                   spss_results=spss_results,
+                                   email_letter=settings.body,
+                                   email_subject=settings.subject,
+                                   feedback_answers=settings.feedback_answers,
+                                   feedback_total_scores=settings.feedback_total_scores,
+                                   mail_sender=mail_sender)
                 if dryrun:
                     _sg.Print(fb) # TODO always output
                     #todo maybe loggin here
@@ -131,13 +131,13 @@ def run():
             elif len(regs) >1:
                 for stud_id in regs:
                     _sg.Print("\nProcess {0}".format(stud_id))
-                    fb = process_student(student_id=stud_id,
-                                         spss_results=spss_results,
-                                         email_letter=settings.body,
-                                         email_subject=settings.subject,
-                                         feedback_answers=settings.feedback_answers,
-                                         feedback_total_scores=settings.feedback_total_scores,
-                                         mail_sender=mail_sender)
+                    fb = send_feedback(student_id=stud_id,
+                                       spss_results=spss_results,
+                                       email_letter=settings.body,
+                                       email_subject=settings.subject,
+                                       feedback_answers=settings.feedback_answers,
+                                       feedback_total_scores=settings.feedback_total_scores,
+                                       mail_sender=mail_sender)
 
                     if dryrun:
                         _sg.Print(fb[:50])
