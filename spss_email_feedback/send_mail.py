@@ -80,7 +80,9 @@ class DirectSMTP(object):
         else:
             msg['To'] = recipient_email
 
-        msg.set_content(markdown(body), subtype="html")
+        body = markdown(body, extensions=[
+            'markdown.extensions.tables'])
+        msg.set_content(body.replace("\n", ""), subtype="html")
         self._smtp.send_message(msg)
 
 
@@ -116,7 +118,7 @@ def send_feedback(student_id,
         else:
             body += "Student id: {}".format(student_id)
         if feedback_answers:
-            body += "\nYour responses\n\n" + \
+            body += "\n\nYour responses\n\n" + \
                 spss_results.answers_as_markdown(student=student_id)
         body += "\n----\n"
 
