@@ -1,10 +1,15 @@
 from os import path
+from time import sleep
+
 import PySimpleGUI as _sg
 import pandas as pd
 from .spss_results import SPSSResults
 from .send_mail import DirectSMTP, DryRun, EmailClient, send_feedback
 from . import APPNAME, __version__, settings
 from .misc import csv2lst, lst2csv
+
+SEND_PAUSE_AFTER = 50
+SEND_PAUSE_DURATION = 10
 
 def run():
     global settings
@@ -106,7 +111,6 @@ def run():
 
         elif e == "send":
             regs = csv2lst(txt_regs.get())
-            dryrun = isinstance(mail_sender, DryRun)
             if isinstance(mail_sender, DirectSMTP) and len(regs)>0:
                 if not caution_window("Do you really want to send {} "
                                   "emails?".format(len(regs))):
@@ -116,20 +120,9 @@ def run():
                 _sg.popup_ok("No SPSS result file")
                 continue
 
-            if len(regs) == 1:
-                fb = send_feedback(student_id=regs[0],
-                                   spss_results=spss_results,
-                                   email_letter=settings.body,
-                                   email_subject=settings.subject,
-                                   feedback_answers=settings.feedback_answers,
-                                   feedback_total_scores=settings.feedback_total_scores,
-                                   mail_sender=mail_sender)
-                if dryrun:
-                    _sg.Print(fb) # TODO always output
-                    #todo maybe loggin here
-
-            elif len(regs) >1:
-                for stud_id in regs:
+            if len(regs) >= 1:
+                is_paused = False
+                for cnt, stud_id in enumerate(regs):
                     _sg.Print("\nProcess {0}".format(stud_id))
                     fb = send_feedback(student_id=stud_id,
                                        spss_results=spss_results,
@@ -139,12 +132,26 @@ def run():
                                        feedback_total_scores=settings.feedback_total_scores,
                                        mail_sender=mail_sender)
 
-                    if dryrun:
-                        _sg.Print(fb[:50])
+                    if isinstance(mail_sender, (DryRun, DirectSMTP)):
+                        if cnt>=1:
+                            # shorten feedback
+                            _sg.Print(fb.split("\n")[0])
+                            #_sg.Print("...")
+                        else:
+                            _sg.Print(fb)
                         if fb.startswith("WARNING"):
                             _sg.Print("-"*80+"\n")
-                        elif len(fb) > 50:
-                            _sg.Print("...")
+
+                        if isinstance(mail_sender, (DirectSMTP, DryRun)):
+                            if cnt % SEND_PAUSE_AFTER==(SEND_PAUSE_AFTER-1):
+                                _sg.Print("\n** Pause sending for {} seconds." 
+                                          "**".format(SEND_PAUSE_DURATION))
+
+                                for x in range(SEND_PAUSE_DURATION*10):
+                                    window.Refresh()
+                                    sleep(1/10)
+
+                _sg.Print("** DONE! **")
 
             else:
                 _sg.popup_ok("No student IDs selected!")

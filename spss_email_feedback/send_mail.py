@@ -93,35 +93,32 @@ def send_feedback(student_id,
     stud_name = spss_results.get_full_name(student_id)
     email_address = spss_results.get_email(student_id)
 
-    if email_address is not None:
-        if len(spss_results.get_row(student=student_id)) != 1:
-            rtn = "WARNING: Can't find <{}> ".format(student_id) + \
-                  "in SPSS data or id occurs multiple times."
-            print(rtn)
-            return rtn
+    if email_address is None:
+        rtn = "WARNING: Can't find <{}> ".format(student_id) + \
+              "in SPSS data or id occurs multiple times."
+        print(rtn)
+        return rtn
+    else:
+        if stud_name is None:
+            body = email_letter.format("student")
         else:
-            if stud_name is None:
-                body = email_letter.format("student")
-            else:
-                body = email_letter.format(stud_name)
+            body = email_letter.format(stud_name)
 
-            body += "\n----\n"
-            if feedback_total_scores:
-                body += spss_results.totalscore_as_markdown(student=student_id)
-            else:
-                body += "Student id: {}".format(student_id)
-            if feedback_answers:
-                body += "\nYour responses\n\n" + \
-                    spss_results.answers_as_markdown(student=student_id)
-            body += "\n----\n"
+        body += "\n----\n"
+        if feedback_total_scores:
+            body += spss_results.totalscore_as_markdown(student=student_id)
+        else:
+            body += "Student id: {}".format(student_id)
+        if feedback_answers:
+            body += "\nYour responses\n\n" + \
+                spss_results.answers_as_markdown(student=student_id)
+        body += "\n----\n"
 
-            if isinstance(mail_sender, (EmailClient, DirectSMTP)):
-                mail_sender.send_mail(recipient_email=email_address,
-                                      subject=email_subject,
-                                      body=body)
+        if isinstance(mail_sender, (EmailClient, DirectSMTP)):
+            mail_sender.send_mail(recipient_email=email_address,
+                                  subject=email_subject,
+                                  body=body)
 
-            return "NAME: {}\nTO: {}\nSUBJECT: {}\n\n".format(
-                        stud_name, email_address, email_subject) +\
-                        body
-    else: # erna==None
-        return stud_name # stud_name contains warning
+        return "NAME: {}\nTO: {}\nSUBJECT: {}\n\n".format(
+                    stud_name, email_address, email_subject) +\
+                    body

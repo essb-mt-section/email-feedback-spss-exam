@@ -1,9 +1,15 @@
 from os import path
 import pandas as pd
 
-from .misc import MarkdownTable
+from .misc import MarkdownTable, VarnamePattern
+
 
 class SPSSResults(object):
+
+    ptn_question = VarnamePattern("v_", "_vraag")
+    ptn_answer = VarnamePattern("v_", "_antw")
+    ptn_correct = VarnamePattern("v_", "_juist")
+    ptn_correctly_answered = VarnamePattern("v_", "_r")
 
     def __init__(self, file):
         """Reading SPSS of the webteam,
@@ -12,14 +18,17 @@ class SPSSResults(object):
 
         self.filename = path.split(file)[1]
         self.df = pd.read_csv(file, sep=";", dtype=str, encoding='cp1252')
-        self.n_questions = 0
-        for x in self.df.columns:
-            if x.endswith("vraag") and x.startswith("v_"):
-                self.n_questions += 1
+        self._q_ids = [] # question ids
 
+        for x in self.df.columns:
+            if SPSSResults.ptn_question.match(x):
+                self._q_ids.append(SPSSResults.ptn_question.get_int(x))
+
+        self.n_questions = len(self._q_ids)
         self.missing_columns = []
         if self.n_questions == 0:
             self.missing_columns.append("questions")
+
         #check further required variables
         for required in ["totaal", "student", "erna",  "voornaam",
                          "tussenvoegsel","achternaam"]:

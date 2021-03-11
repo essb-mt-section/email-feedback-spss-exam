@@ -1,5 +1,5 @@
 import numpy as np
-
+import re
 
 def replace_multi_spaces(txt, replace_str):
     rtn = ""
@@ -16,6 +16,27 @@ def replace_multi_spaces(txt, replace_str):
         else:
             n_spaces += 1
     return rtn
+
+
+class VarnamePattern(object):
+    # Helper Class to handle Varnames with numbers
+
+    def __init__(self, prefix, suffix):
+        self._pttrn = (prefix, suffix)
+        self._regex =  re.compile(r"^" + prefix + r"\d*" + suffix + r"$")
+
+    def match(self, txt):
+        return self._regex.match(txt)
+
+    def make(self, number):
+        return "{}{}{}".format(self._pttrn[0], number, self._pttrn[1])
+
+    def get_int(self, txt):
+        try:
+            return int(txt.replace(self._pttrn[0], "").replace(
+                                self._pttrn[1], ""))
+        except:
+            return None
 
 
 class MarkdownTable(object):
