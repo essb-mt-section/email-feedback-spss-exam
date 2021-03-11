@@ -10,6 +10,8 @@ from .misc import csv2lst, lst2csv
 
 SEND_PAUSE_AFTER = 50
 SEND_PAUSE_DURATION = 10
+DEBUG_REPLACE_RECIPIENT_EMAIL = None
+#DEBUG_REPLACE_RECIPIENT_EMAIL = "ol@limetree.de"
 
 def run():
     global settings
@@ -104,16 +106,33 @@ def run():
 
         elif e == "email":
             settings, mail_sender = settings_window(settings, mail_sender)
+            if isinstance(mail_sender, DirectSMTP):
+                _sg.Print("Connecting to SMTP server {}".format(
+                    mail_sender.smtp_server))
+                try:
+                    mail_sender.log_in()
+                    _sg.Print("Login succeeded! You are ready to go.")
+                    mail_sender.close()
+                except Exception as e:
+                    _sg.Print("\nERROR {}\n\nI can't log in to the SMTP "
+                              "server. "
+                              "Please check settings and password.".format(e))
+                    mail_sender = DryRun()
+
             if isinstance(mail_sender, DryRun):
                 btn_send.update(text=mail_sender.LABEL)
             else:
                 btn_send.update(text="send " + mail_sender.LABEL)
 
+
+
         elif e == "send":
             regs = csv2lst(txt_regs.get())
-            if isinstance(mail_sender, DirectSMTP) and len(regs)>0:
+            if isinstance(mail_sender, (EmailClient, DirectSMTP)) and\
+                                len(regs)>0:
                 if not caution_window("Do you really want to send {} "
-                                  "emails?".format(len(regs))):
+                                  "emails {}?".format(len(regs),
+                                                      mail_sender.LABEL)):
                     continue
 
             if spss_results is None:
@@ -141,6 +160,9 @@ def run():
                             _sg.Print(fb)
                         if fb.startswith("WARNING"):
                             _sg.Print("-"*80+"\n")
+                        if fb.startswith("ERROR"):
+                            _sg.Print("-"*80+"\n")
+                            break # END LOOP
 
                         if isinstance(mail_sender, (DirectSMTP, DryRun)):
                             if cnt % SEND_PAUSE_AFTER==(SEND_PAUSE_AFTER-1):
@@ -182,7 +204,10 @@ def _entry(text, key, settings_dict):
 
 def caution_window(message):
     _sg.theme('DarkRed1')
-    return _sg.popup_yes_no(message, title="Caution")=="Yes"
+    rtn = _sg.popup_yes_no(message, title="Caution")=="Yes"
+    _sg.theme('SystemDefault1')
+    return rtn
+
 
 def settings_window(settings, mail_sender):
     _sg.theme('SystemDefault1')
@@ -249,9 +274,11 @@ def settings_window(settings, mail_sender):
                     _sg.popup('Please enter a SMTP password!')
                 else:
                     mail_sender = DirectSMTP(smtp_server=settings.smtp_server,
-                                       user=settings.user,
-                                       sender_address=settings.sender_email,
-                                       password=values["passwd"])
+                               user=settings.user,
+                               sender_address=settings.sender_email,
+                               password=values["passwd"],
+                               debug_replace_recipient_email=
+                                                 DEBUG_REPLACE_RECIPIENT_EMAIL)
                     break
         else:
             break

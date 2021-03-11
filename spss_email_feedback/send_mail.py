@@ -31,14 +31,20 @@ class EmailClient(object):
         mc.body = txt.replace("\n", "")
         mc.display()
 
+
 class DirectSMTP(object):
     LABEL = "directly via SMTP"
 
-    def __init__(self, smtp_server, user, sender_address, password=None):
+    def __init__(self, smtp_server, user, sender_address, password=None,
+                 debug_replace_recipient_email=None):
         self.smtp_server = smtp_server
         self.user = user
         self.sender_address = sender_address
         self.password = password
+        if isinstance(debug_replace_recipient_email, str):
+            self._debug_replace_recipient = debug_replace_recipient_email
+        else:
+            self._debug_replace_recipient = None
         self._smtp = None
 
     def log_in(self):
@@ -48,11 +54,7 @@ class DirectSMTP(object):
         self._smtp = smtplib.SMTP(host=self.smtp_server, port=587)
         self._smtp.ehlo()
         self._smtp.starttls()
-        try:
-            self._smtp.login(self.user, self.password)
-        except:
-            raise IOError("Can't log in. Password might be incorrect or not "
-                          "set.")
+        self._smtp.login(self.user, self.password)
 
     @property
     def is_logged_in(self):
@@ -73,7 +75,11 @@ class DirectSMTP(object):
         msg = EmailMessage()
         msg['Subject'] = subject
         msg['From'] = self.sender_address
-        msg['To'] = recipient_email
+        if self._debug_replace_recipient is not None:
+            msg['To'] = self._debug_replace_recipient
+        else:
+            msg['To'] = recipient_email
+
         msg.set_content(markdown(body), subtype="html")
         self._smtp.send_message(msg)
 
@@ -114,10 +120,21 @@ def send_feedback(student_id,
                 spss_results.answers_as_markdown(student=student_id)
         body += "\n----\n"
 
-        if isinstance(mail_sender, (EmailClient, DirectSMTP)):
+        if isinstance(mail_sender, EmailClient):
             mail_sender.send_mail(recipient_email=email_address,
                                   subject=email_subject,
                                   body=body)
+
+        elif isinstance(mail_sender,DirectSMTP):
+
+            try:
+                mail_sender.send_mail(recipient_email=email_address,
+                                  subject=email_subject,
+                                  body=body)
+            except Exception as e:
+                rtn = "ERROR: Can't send email. {}".format(e)
+                print(rtn)
+                return rtn
 
         return "NAME: {}\nTO: {}\nSUBJECT: {}\n\n".format(
                     stud_name, email_address, email_subject) +\
