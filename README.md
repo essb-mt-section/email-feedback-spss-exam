@@ -9,7 +9,8 @@ Oliver Lindemann, Erasmus University Rotterdam
 
 
 ## Dependencies
-* Python 3
+
+Python 3.5+ and the following libraries:
 * Pandas
 * PySimpleGUI
 * appdirs
