@@ -3,7 +3,7 @@ __author__ = "Oliver Lindemann"
 
 APPNAME = "Email Feedback SPSS Exam"
 from . import json_settings, defaults
-settings = json_settings.JSONSettings(appname=APPNAME.replace(" ", "_"),
+settings = json_settings.JSONSettings(appname=APPNAME.replace(" ", "_").lower(),
                                       settings_file_name="settings.json",
                                       defaults=defaults.SETTINGS)
 

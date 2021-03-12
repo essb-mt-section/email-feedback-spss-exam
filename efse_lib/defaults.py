@@ -8,8 +8,6 @@ responses you gave and the correct answers.
 * Questions 01-09 were about multiple regression
 * Questions 10-16 were about ANOVA
 * Questions 17-20 were about repeated measures ANOVA
-* total_score:  Total number of correct answers
-* 'nan' means that no answer was registered
 
 Oliver Lindemann
 """
