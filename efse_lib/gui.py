@@ -247,7 +247,7 @@ def settings_window(settings, mail_sender):
                    _sg.Save(size=(10,2)), _sg.Cancel(size=(10,2))
                    ])
 
-    window =  _sg.Window('ForceGUI {}: Settings'.format(__version__), layout)
+    window =  _sg.Window('Email Settings'.format(__version__), layout)
 
     while True:
         event, values = window.read()
