@@ -92,14 +92,19 @@ def send_feedback(student_id,
                   email_subject,
                   feedback_answers,
                   feedback_total_scores,
-                  mail_sender=None):
+                  mail_sender=None,
+                  redirect_email_address=None):
     """
     send_mail_object: DirectSMTP or EmailClient (if send via local email
     client) otherwise it's a dryrun
     """
     assert(isinstance(spss_results, SPSSResults))
     stud_name = spss_results.get_full_name(student_id)
-    email_address = spss_results.get_email(student_id)
+    if isinstance(redirect_email_address, str):
+        email_address = redirect_email_address
+    else:
+        email_address = spss_results.get_email(student_id)
+
 
     if email_address is None:
         rtn = "WARNING: Can't find <{}> ".format(student_id) + \

@@ -1,12 +1,13 @@
 from os import path
 from time import sleep
+import re
 
 import PySimpleGUI as _sg
 import pandas as pd
 from .spss_results import SPSSResults
 from .send_mail import DirectSMTP, DryRun, EmailClient, send_feedback
 from . import APPNAME, __version__, settings
-from .misc import csv2lst, lst2csv
+from .misc import csv2lst, lst2csv, random_element
 
 SEND_PAUSE_AFTER = 50
 SEND_PAUSE_DURATION = 10
@@ -63,6 +64,7 @@ def run():
     window = _sg.Window("{} ({})".format(APPNAME, __version__), layout)
     old_selected = None
     spss_results = None
+    test_email_send = False
     while True:
         e, v = window.read(timeout=500)
         window.Refresh()
@@ -107,14 +109,14 @@ def run():
         elif e == "email":
             settings, mail_sender = settings_window(settings, mail_sender)
             if isinstance(mail_sender, DirectSMTP):
-                _sg.Print("Connecting to SMTP server {}".format(
+                log("Connecting to SMTP server {}".format(
                     mail_sender.smtp_server))
                 try:
                     mail_sender.log_in()
-                    _sg.Print("Login succeeded! You are ready to go.")
+                    log("Login succeeded! You are ready to go.")
                     mail_sender.close()
                 except Exception as e:
-                    _sg.Print("\nERROR {}\n\nI can't log in to the SMTP "
+                    log("\nERROR {}\n\nI can't log in to the SMTP "
                               "server. "
                               "Please check settings and password.".format(e))
                     mail_sender = DryRun()
@@ -125,24 +127,43 @@ def run():
                 btn_send.update(text="send " + mail_sender.LABEL)
 
 
-
         elif e == "send":
             regs = csv2lst(txt_regs.get())
+            if spss_results is None:
+                _sg.popup_ok("No SPSS result file")
+                continue
+
             if isinstance(mail_sender, (EmailClient, DirectSMTP)) and\
                                 len(regs)>0:
+
+                if isinstance(mail_sender, DirectSMTP) and not test_email_send:
+                    adress = test_email_address()
+                    if adress is not None:
+                        # SEND TEST EMAIL
+                        log("\nTest Email: {0}".format(adress))
+                        stud_id = random_element(spss_results.student_ids)
+                        fb = send_feedback(student_id=stud_id,
+                                           spss_results=spss_results,
+                                           email_letter=settings.body,
+                                           email_subject=settings.subject,
+                                           feedback_answers=settings.feedback_answers,
+                                           feedback_total_scores=settings.feedback_total_scores,
+                                           mail_sender=mail_sender,
+                                           redirect_email_address=adress)
+                        log(fb)
+                        test_email_send = True
+                        continue
+
                 if not caution_window("Do you really want to send {} "
                                   "emails {}?".format(len(regs),
                                                       mail_sender.LABEL)):
                     continue
 
-            if spss_results is None:
-                _sg.popup_ok("No SPSS result file")
-                continue
-
             if len(regs) >= 1:
-                is_paused = False
+                test_email_send = True
+                # TODO quitting send process manual break
                 for cnt, stud_id in enumerate(regs):
-                    _sg.Print("\nProcess {0}".format(stud_id))
+                    log("\nProcess {0}".format(stud_id))
                     fb = send_feedback(student_id=stud_id,
                                        spss_results=spss_results,
                                        email_letter=settings.body,
@@ -154,26 +175,26 @@ def run():
                     if isinstance(mail_sender, (DryRun, DirectSMTP)):
                         if cnt>=1:
                             # shorten feedback
-                            _sg.Print(fb.split("\n")[0])
-                            #_sg.Print("...")
+                            log(fb.split("\n")[0])
+                            #gui_log("...")
                         else:
-                            _sg.Print(fb)
+                            log(fb)
                         if fb.startswith("WARNING"):
-                            _sg.Print("-"*80+"\n")
+                            log("-" * 80 + "\n")
                         if fb.startswith("ERROR"):
-                            _sg.Print("-"*80+"\n")
+                            log("-" * 80 + "\n")
                             break # END LOOP
 
                         if isinstance(mail_sender, (DirectSMTP, DryRun)):
                             if cnt % SEND_PAUSE_AFTER==(SEND_PAUSE_AFTER-1):
-                                _sg.Print("\n** Pause sending for {} seconds." 
+                                log("\n** Pause sending for {} seconds." 
                                           "**".format(SEND_PAUSE_DURATION))
 
                                 for x in range(SEND_PAUSE_DURATION*10):
                                     window.Refresh()
                                     sleep(1/10)
 
-                _sg.Print("** DONE! **")
+                log("** DONE! **")
 
             else:
                 _sg.popup_ok("No student IDs selected!")
@@ -198,6 +219,10 @@ def run():
     settings.save()
     return
 
+
+def log(txt):
+    _sg.Print(txt)
+
 def _entry(text, key, settings_dict):
     return [_sg.Text(text +":", size=(10, 1)),
             _sg.InputText(settings_dict[key], size=(40, 1), key=key)]
@@ -208,6 +233,34 @@ def caution_window(message):
     _sg.theme('SystemDefault1')
     return rtn
 
+
+def test_email_address():
+
+    _sg.theme('SystemDefault1')
+    yes = _sg.Button("Yes", size=(20,2), key="yes", disabled=True)
+    layout = [[_sg.Text("To:", size=(3, 1)),
+            _sg.InputText("", size=(40, 1), key="address", enable_events=True)],
+            [_sg.Text("Send a test email to the email address?")],
+            [yes, _sg.Button("No", size=(10,2), key="no")]]
+    win = _sg.Window('Sending Test Email'.format(__version__), layout)
+
+    vaild_email = re.compile(r"[^@]+@[^@]+\.[^@]+")
+    while True:
+        event, values = win.read()
+        win.refresh()
+
+        if event == "address":
+            invalid = vaild_email.match(values["address"]) is None
+            yes.update(disabled=invalid)
+            continue
+        elif event == "yes":
+            rtn = values["address"]
+            break
+        rtn = None
+        break
+
+    win.close()
+    return rtn
 
 def settings_window(settings, mail_sender):
     _sg.theme('SystemDefault1')

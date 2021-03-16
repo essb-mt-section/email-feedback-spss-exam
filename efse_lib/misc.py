@@ -1,5 +1,6 @@
-import numpy as np
+from random import randint
 import re
+import numpy as np
 
 def replace_multi_spaces(txt, replace_str):
     rtn = ""
@@ -93,3 +94,7 @@ def lst2csv(lst):
 def is_equal_after_rounding(a, b, decimals):
     # TRUE if the a equals b after both numbers being rounded
     return np.round(a, decimals=decimals) == np.round(b, decimals=decimals)
+
+
+def random_element(a_list):
+    return a_list[randint(0, len(a_list))]
