@@ -211,7 +211,7 @@ def caution_window(message):
 
 def settings_window(settings, mail_sender):
     _sg.theme('SystemDefault1')
-    send_types = [DryRun.LABEL, EmailClient.LABEL, DirectSMTP.LABEL]
+    #send_type = (DryRun, EmailClient, DirectSMTP)
     layout = []
     s_dict = settings.get_dict()
     try:
@@ -219,11 +219,15 @@ def settings_window(settings, mail_sender):
     except:
         default_passwd = ""
 
+    rd_dryrun = _sg.Radio(DryRun.LABEL, "RADIO1", enable_events=True,
+              default=isinstance(mail_sender, DryRun))
+    rd_client = _sg.Radio(EmailClient.LABEL, "RADIO1", enable_events=True,
+                               default=isinstance(mail_sender, EmailClient))
+    rd_smtp =_sg.Radio(DirectSMTP.LABEL, "RADIO1", enable_events=True,
+              default=isinstance(mail_sender, DirectSMTP))
+
     layout.append([_sg.Frame('Email:',
-                   [[_sg.Text("Type: ", size=(10, 1)),
-                     _sg.Combo(send_types,key="send_type",
-                                         default_value=mail_sender.LABEL) ],
-                    _entry("Subject", "subject", s_dict),
+                   [_entry("Subject", "subject", s_dict),
                     _entry("Sender", "sender_email", s_dict),
                     [_sg.Multiline(default_text=s_dict["body"],
                                    size=(80, 15),
@@ -236,22 +240,21 @@ def settings_window(settings, mail_sender):
                                   default=s_dict["feedback_answers"])]
                     ])])
 
-
-    layout.append([_sg.Frame('SMTP Settings',
+    frame_smtp_settings = _sg.Frame('SMTP Settings',
                    [_entry("Server", "smtp_server", s_dict),
                     _entry("User", "user", s_dict),
                     [_sg.Text("Password", size=(10, 1)),
                      _sg.Input(size=(40,1), default_text=default_passwd,
                                key='passwd',  password_char='*')]
-                    ]),
-                   _sg.Save(size=(10,2)), _sg.Cancel(size=(10,2))
-                   ])
+                    ], visible=isinstance(mail_sender, DirectSMTP))
+    layout.append([frame_smtp_settings])
+    layout.append([_sg.Frame('Type:', [[rd_dryrun, rd_client, rd_smtp]]),
+                   _sg.Save(size=(10,2)), _sg.Cancel(size=(10,2))])
 
     window =  _sg.Window('Email Settings'.format(__version__), layout)
 
     while True:
         event, values = window.read()
-
         if event=="Save":
 
             for key in ["body", "subject", "sender_email", "user",
@@ -261,15 +264,15 @@ def settings_window(settings, mail_sender):
                 s_dict[key] = values[key]
             settings.save()
 
-            if values["send_type"] == DryRun.LABEL:
+            if rd_dryrun.get():
                 mail_sender = DryRun()
                 break
 
-            elif values["send_type"] == EmailClient.LABEL:
+            elif rd_client.get():
                 mail_sender = EmailClient()
                 break
 
-            elif values["send_type"] == DirectSMTP.LABEL:
+            elif rd_smtp.get():
                 if len(values["passwd"])==0:
                     _sg.popup('Please enter a SMTP password!')
                 else:
@@ -280,6 +283,9 @@ def settings_window(settings, mail_sender):
                                debug_replace_recipient_email=
                                                  DEBUG_REPLACE_RECIPIENT_EMAIL)
                     break
+        elif isinstance(event, int): # change of ratio button
+            frame_smtp_settings.update(visible=rd_smtp.get())
+
         else:
             break
 

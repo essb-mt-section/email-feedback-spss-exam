@@ -22,5 +22,3 @@ SETTINGS={
     "feedback_total_scores": False,
     "feedback_answers": True,
 }
-
-
