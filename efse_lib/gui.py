@@ -221,7 +221,9 @@ def run():
 
 
 def log(txt):
-    _sg.Print(txt)
+    for l in str(txt).split("\n"):
+        _sg.Print(l)
+        # TODO timestamps log_file
 
 def _entry(text, key, settings_dict):
     return [_sg.Text(text +":", size=(10, 1)),
