@@ -25,7 +25,10 @@ class EmailClient(object):
         self.body_format = body_format
 
     def send_mail(self, recipient_email, subject, body):
-        mc = MailComposer(subject=subject, body_format=self.body_format)
+        mc = MailComposer(subject=subject, body_format=self.body_format) #
+        # FIXME (check MailComposer) raise ERROR, if no email
+        #  client found
+
         mc.to = recipient_email
         txt = markdown(body, extensions=['markdown.extensions.tables'])
         mc.body = txt.replace("\n", "")
