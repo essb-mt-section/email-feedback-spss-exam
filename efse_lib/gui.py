@@ -104,7 +104,8 @@ def run():
 
         elif e == "reg_file":
             lst = registration_file_window(v["reg_file"])
-            txt_regs.update(value=lst2csv(lst))
+            if lst is not None:
+                txt_regs.update(value=lst2csv(lst))
 
         elif e == "reg_clear":
             txt_regs.update(value="")

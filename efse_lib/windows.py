@@ -5,7 +5,7 @@ import PySimpleGUI as _sg
 import pandas as pd
 from .send_mail import DirectSMTP, DryRun, EmailClient
 from . import  APPNAME, __version__, __author__, DEBUG_REPLACE_RECIPIENT_EMAIL
-from .log import get_log_file
+from .log import get_log_file, log
 
 
 def _entry(text, key, settings_dict):
@@ -132,8 +132,14 @@ def settings_window(settings, mail_sender):
 
 
 def registration_file_window(reg_file):
+    if reg_file is None or len(reg_file)==0:
+        return None
     _sg.theme('SystemDefault1')
-    df = pd.read_csv(reg_file, sep=",")
+    try:
+        df = pd.read_csv(reg_file, sep=",")
+    except:
+        log("Can't read {}".format(reg_file))
+        return None
 
     layout = [[_sg.Frame('{}'.format(path.split(reg_file)[1]), [
         [_sg.Text("Select ID column:", size=(15, 1)),
