@@ -15,8 +15,8 @@ Oliver Lindemann
 SETTINGS={
     "body": BODY,
     "subject": "SPSS Exam Feedback",
-    "sender_email": "lindemann@essb.eur.nl",
-    "user": "63596oli@eur.nl",
+    "sender_email": "xxxx@essb.eur.nl",
+    "user": "12345abc@eur.nl",
     "smtp_server": "smtp.office365.com",
     "last_folder": None,
     "feedback_total_scores": False,

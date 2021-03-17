@@ -3,7 +3,6 @@ import pandas as pd
 
 from .misc import MarkdownTable, VarnamePattern
 
-
 class SPSSResults(object):
 
     ptn_question = VarnamePattern("v_", "_vraag")
