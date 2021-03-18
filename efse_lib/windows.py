@@ -7,6 +7,8 @@ from .send_mail import DirectSMTP, DryRun, EmailClient
 from . import  __version__, __author__
 from .const import APPNAME, DEBUG_REPLACE_RECIPIENT_EMAIL
 from .log import get_log_file, log
+from .misc import random_element
+from .send_mail import send_feedback
 
 
 def _entry(text, key, settings_dict):
@@ -20,17 +22,21 @@ def caution_window(message):
     return rtn
 
 
-def test_email_address():
+def test_email_address(spss_results, settings, mail_sender):
 
     _sg.theme('SystemDefault1')
-    yes = _sg.Button("Yes", size=(20,2), key="yes", disabled=True)
-    layout = [[_sg.Text("To:", size=(3, 1)),
-            _sg.InputText("", size=(40, 1), key="address", enable_events=True)],
-            [_sg.Text("Send a test email to the email address?")],
-            [yes, _sg.Button("No", size=(10,2), key="no")]]
+    yes = _sg.Button("Yes, send test email", size=(23,2), key="yes",
+                     disabled=True)
+    layout = [[_sg.Text("Do you want to send a test email?")],
+              [_sg.Text("To:", size=(3, 1)),
+               _sg.InputText("", size=(40, 1), key="address", enable_events=True)],
+
+            [yes, _sg.Button("No, skip test email", size=(23,2), key="no")]]
     win = _sg.Window('Sending Test Email'.format(__version__), layout)
 
     vaild_email = re.compile(r"[^@]+@[^@]+\.[^@]+")
+    address = None
+
     while True:
         event, values = win.read()
         win.refresh()
@@ -40,13 +46,29 @@ def test_email_address():
             yes.update(disabled=invalid)
             continue
         elif event == "yes":
-            rtn = values["address"]
+            address = values["address"]
             break
-        rtn = None
         break
-
     win.close()
-    return rtn
+
+    # send test email
+    if address is not None and spss_results is not None:
+        # SEND TEST EMAIL
+        log("\nTest Email: {0}".format(address))
+        stud_id = random_element(spss_results.student_ids)
+        fb = send_feedback(student_id=stud_id,
+                           spss_results=spss_results,
+                           email_letter=settings.body,
+                           email_subject=settings.subject,
+                           feedback_answers=settings.feedback_answers,
+                           feedback_total_scores=settings.feedback_total_scores,
+                           mail_sender=mail_sender,
+                           redirect_email_address=address)
+        log(fb)
+        return True
+
+    else:
+        return False
 
 def settings_window(settings, mail_sender):
     _sg.theme('SystemDefault1')

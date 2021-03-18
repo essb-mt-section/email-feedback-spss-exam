@@ -6,10 +6,10 @@ from .spss_results import SPSSResults
 from .send_mail import DirectSMTP, DryRun, EmailClient, send_feedback
 from . import  __version__, settings
 from .const import APPNAME, SEND_PAUSE_DURATION, SEND_PAUSE_AFTER
-from .misc import csv2lst, lst2csv, random_element
+from .misc import csv2lst, lst2csv
 from .log import log, init_logging
-from .windows import log_window, registration_file_window, \
-    test_email_address, caution_window, settings_window
+from .windows import log_window, registration_file_window, test_email_address,\
+    caution_window, settings_window
 
 def run():
     global settings
@@ -52,20 +52,19 @@ def run():
          [_sg.Button("Log", key="view_log", size=(8, 1))]])
 
     btn_send = _sg.Button(button_text=mail_sender.LABEL,
-                             key="send", size=(15, 3),
+                             key="send", size=(17, 3),
                              visible=True)
     btn_frame_email = _sg.Frame('Send Email', [
-        [_sg.Button("Email Settings", key="email", size=(15, 3), visible=True),
-         btn_send, _sg.Cancel(size=(15,3))]])
+        [_sg.Button("Email Settings", key="email", size=(17, 3), visible=True),
+         btn_send, _sg.Cancel(size=(17,3))]])
 
     layout.append([btn_frame_view,
-         _sg.Text(' '*29),
+         _sg.Text(' '*20),
          btn_frame_email])
 
     window = _sg.Window("{} ({})".format(APPNAME, __version__), layout)
     old_selected = None
     spss_results = None
-    test_email_send = False
     while True:
         e, v = window.read(timeout=500)
         window.Refresh()
@@ -121,18 +120,27 @@ def run():
                     mail_sender.smtp_server))
                 try:
                     mail_sender.log_in()
-                    log("Login succeeded! You are ready to go.")
-                    mail_sender.close()
+                    log("Login succeeded!")
                 except Exception as e:
                     log("\nERROR {}\n\nI can't log in to the SMTP "
                               "server. "
                               "Please check settings and password.".format(e))
                     mail_sender = DryRun()
 
+                if isinstance(mail_sender, DirectSMTP):
+                    if spss_results is None:
+                        log("WARNING: Can't send a test email, because no SPSS "
+                            "result file is specified.")
+                    else:
+                        test_email_address(spss_results=spss_results,
+                                       settings=settings,
+                                       mail_sender=mail_sender)
+                    mail_sender.close()
+
             if isinstance(mail_sender, DryRun):
                 btn_send.update(text=mail_sender.LABEL)
             else:
-                btn_send.update(text="send " + mail_sender.LABEL)
+                btn_send.update(text="Send " + mail_sender.LABEL)
 
         elif e == "send":
             regs = csv2lst(txt_regs.get())
@@ -143,31 +151,12 @@ def run():
             if isinstance(mail_sender, (EmailClient, DirectSMTP)) and\
                                 len(regs)>0:
 
-                if isinstance(mail_sender, DirectSMTP) and not test_email_send:
-                    adress = test_email_address()
-                    if adress is not None:
-                        # SEND TEST EMAIL
-                        log("\nTest Email: {0}".format(adress))
-                        stud_id = random_element(spss_results.student_ids)
-                        fb = send_feedback(student_id=stud_id,
-                                           spss_results=spss_results,
-                                           email_letter=settings.body,
-                                           email_subject=settings.subject,
-                                           feedback_answers=settings.feedback_answers,
-                                           feedback_total_scores=settings.feedback_total_scores,
-                                           mail_sender=mail_sender,
-                                           redirect_email_address=adress)
-                        log(fb)
-                        test_email_send = True
-                        continue
-
                 if not caution_window("Do you really want to send {} "
                                   "emails {}?".format(len(regs),
                                                       mail_sender.LABEL)):
                     continue
 
             if len(regs) >= 1:
-                test_email_send = True
                 # TODO quitting send process manual break
                 for cnt, stud_id in enumerate(regs):
                     log("\nProcess {0}".format(stud_id))
