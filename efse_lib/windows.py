@@ -4,7 +4,8 @@ import re
 import PySimpleGUI as _sg
 import pandas as pd
 from .send_mail import DirectSMTP, DryRun, EmailClient
-from . import  APPNAME, __version__, __author__, DEBUG_REPLACE_RECIPIENT_EMAIL
+from . import  __version__, __author__
+from .const import APPNAME, DEBUG_REPLACE_RECIPIENT_EMAIL
 from .log import get_log_file, log
 
 

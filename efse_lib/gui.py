@@ -4,8 +4,8 @@ from time import sleep
 import PySimpleGUI as _sg
 from .spss_results import SPSSResults
 from .send_mail import DirectSMTP, DryRun, EmailClient, send_feedback
-from . import APPNAME, __version__, settings, SEND_PAUSE_AFTER, \
-    SEND_PAUSE_DURATION
+from . import  __version__, settings
+from .const import APPNAME, SEND_PAUSE_DURATION, SEND_PAUSE_AFTER
 from .misc import csv2lst, lst2csv, random_element
 from .log import log, init_logging
 from .windows import log_window, registration_file_window, \
@@ -86,7 +86,7 @@ def run():
                           "data file:", str(spss_results.missing_columns),
                           "\n\nPlease use the export function **with "
                           "details advanced** and selected all "
-                          "file additional variables.\n\n(c) Oliver "
+                          "additional variables.\n\n(c) Oliver "
                           "Lindemann")
                 spss_results = None
                 input_fl_spss.update(value="")

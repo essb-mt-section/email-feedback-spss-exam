@@ -8,6 +8,7 @@ except:
     MailComposer = None
 
 from .spss_results import SPSSResults
+from .const import NAME_PLACE_HOLDER
 
 class DryRun(object):
     LABEL = "Dry Run"
@@ -115,6 +116,10 @@ def send_feedback(student_id,
         print(rtn)
         return rtn
     else:
+        t = email_letter.upper().find(NAME_PLACE_HOLDER)
+        if t>=0:
+            email_letter = email_letter[:t] + "{}" +\
+                           email_letter[(t+len(NAME_PLACE_HOLDER)):]
         if stud_name is None:
             body = email_letter.format("student")
         else:
