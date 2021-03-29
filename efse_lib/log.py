@@ -1,7 +1,7 @@
 import os
 import logging
 import appdirs
-from .const import APPNAME
+from .consts import APPNAME
 
 from PySimpleGUI import Print
 

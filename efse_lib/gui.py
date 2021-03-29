@@ -5,7 +5,7 @@ import PySimpleGUI as _sg
 from .spss_results import SPSSResults
 from .send_mail import DirectSMTP, DryRun, EmailClient, send_feedback
 from . import  __version__, settings
-from .const import APPNAME, SEND_PAUSE_DURATION, SEND_PAUSE_AFTER
+from .consts import APPNAME, SEND_PAUSE_DURATION, SEND_PAUSE_AFTER
 from .misc import csv2lst, lst2csv
 from .log import log, init_logging
 from .windows import log_window, registration_file_window, test_email_address,\

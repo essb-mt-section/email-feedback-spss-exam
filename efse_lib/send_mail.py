@@ -8,7 +8,7 @@ except:
     MailComposer = None
 
 from .spss_results import SPSSResults
-from .const import NAME_PLACE_HOLDER
+from .consts import NAME_PLACE_HOLDER
 
 class DryRun(object):
     LABEL = "Dry Run"
