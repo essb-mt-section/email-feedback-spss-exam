@@ -16,6 +16,7 @@ sdist
 develop-eggs
 .installed.cfg
 __pycache__
+venv
 
 # vim files
 *.swp

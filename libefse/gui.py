@@ -20,6 +20,7 @@ def run():
     layout = []
     input_fl_spss = _sg.InputText("", size=(60, 1), enable_events=True,
                                    key="fl_spss")
+
     layout.append([_sg.Frame('Result File',
                              [[_sg.Text("SPSS result file (csv):",
                                         size=(20, 1)),
