@@ -1,3 +1,3 @@
 if __name__ == "__main__":
-    import libefse
-    libefse.run()
+    from libefse import gui
+    gui.run()

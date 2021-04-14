@@ -15,5 +15,3 @@ from .json_settings import JSONSettings as _JSONSettings
 settings = _JSONSettings(appname=consts.APPNAME.replace(" ", "_").lower(),
                          settings_file_name="settings.json",
                          defaults=consts.DEFAULT_SETTINGS)
-
-from .gui import run
