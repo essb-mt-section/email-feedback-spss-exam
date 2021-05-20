@@ -1,18 +1,22 @@
 from os import path
 from time import sleep
 
+from . import  __version__, APPNAME
 import PySimpleGUI as _sg
 from .spss_results import SPSSResults
 from .send_mail import DirectSMTP, DryRun, EmailClient, send_feedback
-from . import  __version__, settings
-from .consts import APPNAME, SEND_PAUSE_DURATION, SEND_PAUSE_AFTER
+from .consts import SEND_PAUSE_DURATION, SEND_PAUSE_AFTER, DEFAULT_SETTINGS
 from .misc import csv2lst, lst2csv
 from .log import log, init_logging
 from .windows import log_window, registration_file_window, test_email_address,\
     caution_window, settings_window
+from .json_settings import JSONSettings as _JSONSettings
+
 
 def run():
-    global settings
+    settings = _JSONSettings(appname=APPNAME.replace(" ", "_").lower(),
+                             settings_file_name="settings.json",
+                             defaults=DEFAULT_SETTINGS)
     mail_sender = DryRun()
 
     init_logging()

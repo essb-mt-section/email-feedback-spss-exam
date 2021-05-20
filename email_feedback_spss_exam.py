@@ -2,5 +2,5 @@
 """O. Lindemann"""
 
 if __name__ == "__main__":
-    from libefse import gui
-    gui.run()
+    from libefse.__main__ import run
+    run()
