@@ -5,7 +5,7 @@ import PySimpleGUI as _sg
 import pandas as pd
 from .send_mail import DirectSMTP, DryRun, EmailClient
 from . import  __version__, __author__, APPNAME
-from .consts import DEBUG_REPLACE_RECIPIENT_EMAIL
+from .consts import DEBUG_REPLACE_RECIPIENT_EMAIL, FILE_ENCODING
 from .log import get_log_file, log
 from .misc import random_element
 from .send_mail import send_feedback
@@ -181,7 +181,7 @@ def registration_file_window(reg_file):
 
 def log_window():
     log_file = get_log_file()
-    with open(log_file) as f:
+    with open(log_file, "r", encoding=FILE_ENCODING) as f:
         lines = f.readlines()
 
     _sg.theme('SystemDefault1')

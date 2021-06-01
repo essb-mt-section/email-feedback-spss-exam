@@ -4,6 +4,8 @@ NAME_PLACE_HOLDER = "[NAME]"
 DEBUG_REPLACE_RECIPIENT_EMAIL = None
 #DEBUG_REPLACE_RECIPIENT_EMAIL = "ol@limetree.de"
 
+FILE_ENCODING = "utf-8"
+
 ### defaults
 DEFAULT_BODY = """Dear [NAME],
 
