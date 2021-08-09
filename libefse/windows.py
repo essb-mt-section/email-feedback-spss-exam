@@ -131,6 +131,8 @@ def settings_window(settings, mail_sender):
 
             elif rd_client.get():
                 mail_sender = EmailClient()
+                if mail_sender.error:
+                    log(mail_sender.error, gui_log=True)
                 break
 
             elif rd_smtp.get():

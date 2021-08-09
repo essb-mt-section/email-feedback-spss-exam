@@ -173,24 +173,23 @@ def run():
                                        feedback_total_scores=settings.feedback_total_scores,
                                        mail_sender=mail_sender)
 
-                    if isinstance(mail_sender, (DryRun, DirectSMTP)):
-                        if cnt>=1:
-                            # shorten feedback
-                            log(fb.split("\n")[0])
-                            #gui_log("...")
-                        else:
-                            log(fb)
-                        if fb.startswith("ERROR"):
-                            break # END LOOP
+                    if cnt>=1:
+                        # shorten feedback
+                        log(fb.split("\n")[0])
+                        #gui_log("...")
+                    else:
+                        log(fb)
+                    if fb.startswith("ERROR"):
+                        break # END LOOP
 
-                        if isinstance(mail_sender, (DirectSMTP, DryRun)):
-                            if cnt % SEND_PAUSE_AFTER==(SEND_PAUSE_AFTER-1):
-                                log("\n** Pause sending for {} seconds." 
-                                          "**".format(SEND_PAUSE_DURATION))
+                    if isinstance(mail_sender, (DirectSMTP, DryRun)):
+                        if cnt % SEND_PAUSE_AFTER==(SEND_PAUSE_AFTER-1):
+                            log("\n** Pause sending for {} seconds." 
+                                      "**".format(SEND_PAUSE_DURATION))
 
-                                for x in range(SEND_PAUSE_DURATION*10):
-                                    window.Refresh()
-                                    sleep(1/10)
+                            for x in range(SEND_PAUSE_DURATION*10):
+                                window.Refresh()
+                                sleep(1/10)
 
                 log("** DONE! **")
 

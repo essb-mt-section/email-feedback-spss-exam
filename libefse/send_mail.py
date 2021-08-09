@@ -10,7 +10,14 @@ except:
 from .spss_results import SPSSResults
 from .consts import NAME_PLACE_HOLDER
 
-class DryRun(object):
+
+class SendMailObject(object):
+    LABEL = ""
+
+    def __init__(self):
+        self.error = False
+
+class DryRun(SendMailObject):
     LABEL = "Dry Run"
 
     def send_mail(self, recipient_email, subject, body):
@@ -18,29 +25,41 @@ class DryRun(object):
         pass
 
 
-class EmailClient(object):
+class EmailClient(SendMailObject):
     LABEL = "via email client"
+
     def __init__(self, body_format="html"):
+        super().__init__()
         if MailComposer is None:
-            raise RuntimeError("Please install 'mailcomposer' via pip")
+            self.error = "ERROR: Please install 'mailcomposer' via pip."
         self.body_format = body_format
 
     def send_mail(self, recipient_email, subject, body):
-        mc = MailComposer(subject=subject, body_format=self.body_format) #
-        # FIXME (check MailComposer) raise ERROR, if no email
-        #  client found
+        """returns error message"""
+
+        if self.error:
+            return self.error
+
+        try:
+            mc = MailComposer(subject=subject, body_format=self.body_format)
+        except:
+            self.error =  "ERROR: No email client found"
+            return self.error
 
         mc.to = recipient_email
         txt = markdown(body, extensions=['markdown.extensions.tables'])
         mc.body = txt.replace("\n", "")
         mc.display()
 
+        return self.error
 
-class DirectSMTP(object):
+
+class DirectSMTP(SendMailObject):
     LABEL = "directly via SMTP"
 
     def __init__(self, smtp_server, user, sender_address, password=None,
-                 debug_replace_recipient_email=None):
+                                    debug_replace_recipient_email=None):
+        super().__init__()
         self.smtp_server = smtp_server
         self.user = user
         self.sender_address = sender_address
@@ -73,6 +92,11 @@ class DirectSMTP(object):
         self.close()
 
     def send_mail(self, recipient_email, subject, body):
+        """returns error message"""
+
+        if self.error:
+            return self.error
+
         if not self.is_logged_in:
             self.log_in()
 
@@ -89,6 +113,7 @@ class DirectSMTP(object):
         msg.set_content(body.replace("\n", ""), subtype="html")
         self._smtp.send_message(msg)
 
+        return self.error
 
 def send_feedback(student_id,
                   spss_results,
@@ -113,8 +138,8 @@ def send_feedback(student_id,
     if email_address is None:
         rtn = "WARNING: Can't find <{}> ".format(student_id) + \
               "in SPSS data or id occurs multiple times."
-        print(rtn)
         return rtn
+
     else:
         t = email_letter.upper().find(NAME_PLACE_HOLDER)
         if t>=0:
@@ -135,22 +160,23 @@ def send_feedback(student_id,
                 spss_results.answers_as_markdown(student=student_id)
         body += "\n----\n"
 
+        error = False
         if isinstance(mail_sender, EmailClient):
-            mail_sender.send_mail(recipient_email=email_address,
+            error = mail_sender.send_mail(recipient_email=email_address,
                                   subject=email_subject,
                                   body=body)
-
         elif isinstance(mail_sender,DirectSMTP):
-
             try:
-                mail_sender.send_mail(recipient_email=email_address,
+                error = mail_sender.send_mail(recipient_email=email_address,
                                   subject=email_subject,
                                   body=body)
             except Exception as e:
-                rtn = "ERROR: Can't send email. {}".format(e)
-                print(rtn)
-                return rtn
+                error = "ERROR: Can't send email. {}".format(e)
 
-        return "NAME: {}\nTO: {}\nSUBJECT: {}\n\n".format(
+        if error:
+            print(error)
+            return error
+        else:
+            return "NAME: {}\nTO: {}\nSUBJECT: {}\n\n".format(
                     stud_name, email_address, email_subject) +\
                     body
