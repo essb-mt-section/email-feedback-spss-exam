@@ -69,7 +69,7 @@ and add your university address as reply-to.
 
 To send the feedback via Gmail, generate first an app password for mails 
 using this [link](https://myaccount.google.com/apppasswords). Remember the password and
-add it as SMTP password in the settings dialog. Passwords are not saved by the app.
+add it as SMTP password in the settings dialog. Passwords will not be saved by the app.
 
 ---
 **Bugs**: Please [submit](https://github.com/essb-mt-section/email-feedback-spss-exam/issues/new)
