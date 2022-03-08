@@ -61,6 +61,16 @@ Select the fields *'erna'*, *'voornaam'*, *'tussenvoegsel'* and
 ![export](picts/export_screenshot_1.png) 
 
 
+## Two-factor authentication and Gmail
+
+A two-factor authentication (OAuth) for the SMTP server is not implement in this app. 
+You may therefore use a Gmail account (with so-called app password) for sending emails
+and add your university address as reply-to. 
+
+To send the feedback via Gmail, generate first an app password for mails 
+using this [link](https://myaccount.google.com/apppasswords). Remember the password and
+add it as SMTP password in the settings dialog. Passwords are not saved by the app.
+
 ---
 **Bugs**: Please [submit](https://github.com/essb-mt-section/email-feedback-spss-exam/issues/new)
 any bug you encounter to the Github issue tracker.

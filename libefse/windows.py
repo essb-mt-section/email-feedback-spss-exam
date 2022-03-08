@@ -11,9 +11,9 @@ from .misc import random_element
 from .send_mail import send_feedback
 
 
-def _entry(text, key, settings_dict):
-    return [_sg.Text(text +":", size=(10, 1)),
-            _sg.InputText(settings_dict[key], size=(40, 1), key=key)]
+def _entry(text, key, settings_dict, sizes=(10, 40)):
+    return [_sg.Text(text + ":", size=(sizes[0], 1)),
+            _sg.InputText(settings_dict[key], size=(sizes[1], 1), key=key)]
 
 def caution_window(message):
     _sg.theme('DarkRed1')
@@ -88,8 +88,9 @@ def settings_window(settings, mail_sender):
               default=isinstance(mail_sender, DirectSMTP))
 
     layout.append([_sg.Frame('Email:',
-                   [_entry("Subject", "subject", s_dict),
-                    _entry("Sender", "sender_email", s_dict),
+                   [_entry("Subject", "subject", s_dict, sizes=(10, 60)),
+                    _entry("Sender", "sender_email", s_dict, sizes=(10, 60)),
+                    _entry("Reply-To", "reply_to", s_dict, sizes=(10, 60)),
                     [_sg.Multiline(default_text=s_dict["body"],
                                    size=(80, 15),
                                    key="body")],
@@ -102,9 +103,10 @@ def settings_window(settings, mail_sender):
                     ])])
 
     frame_smtp_settings = _sg.Frame('SMTP Settings',
-                   [_entry("Server", "smtp_server", s_dict),
-                    _entry("User", "user", s_dict),
-                    [_sg.Text("Password", size=(10, 1)),
+                   [_entry("Server", "smtp_server", s_dict, sizes=(21, 40)),
+                    _entry("User", "user", s_dict, sizes=(21, 40)),
+                    _entry("Port", "port", s_dict, sizes=(21, 40)),
+                    [_sg.Text("SMTP or App Password:", size=(21, 1)),
                      _sg.Input(size=(40,1), default_text=default_passwd,
                                key='passwd',  password_char='*')]
                     ], visible=isinstance(mail_sender, DirectSMTP))
@@ -118,10 +120,11 @@ def settings_window(settings, mail_sender):
         event, values = window.read()
         if event=="Save":
 
-            for key in ["body", "subject", "sender_email", "user",
-                        "smtp_server", "feedback_answers", "feedback_total_scores"]:
-                if key == "body":
-                    values[key] = values[key].strip() + "\n"
+            for key in ["body", "subject", "sender_email", "reply_to", "user",
+                        "smtp_server", "port",
+                        "feedback_answers", "feedback_total_scores"]:
+                if key in ("reply_to", "body"):
+                    values[key] = values[key].strip()
                 s_dict[key] = values[key]
             settings.save()
 
@@ -137,12 +140,14 @@ def settings_window(settings, mail_sender):
 
             elif rd_smtp.get():
                 if len(values["passwd"])==0:
-                    _sg.popup('Please enter a SMTP password!')
+                    _sg.popup('Please enter a SMTP or GMail app password!')
                 else:
                     mail_sender = DirectSMTP(smtp_server=settings.smtp_server,
                                user=settings.user,
                                sender_address=settings.sender_email,
                                password=values["passwd"],
+                               port=settings.port,
+                               reply_to=settings.reply_to,
                                debug_replace_recipient_email=
                                                  DEBUG_REPLACE_RECIPIENT_EMAIL)
                     break
