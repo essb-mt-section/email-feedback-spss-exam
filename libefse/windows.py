@@ -21,6 +21,11 @@ def caution_window(message):
     _sg.theme('SystemDefault1')
     return rtn
 
+def wait_window(message):
+    _sg.theme('DarkRed1')
+    rtn = _sg.popup_yes_no(message, title="Caution")=="Yes"
+    _sg.theme('SystemDefault1')
+    return rtn
 
 def test_email_address(spss_results, settings, mail_sender):
 

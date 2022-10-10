@@ -9,9 +9,10 @@ from .consts import SEND_PAUSE_DURATION, SEND_PAUSE_AFTER, DEFAULT_SETTINGS
 from .misc import csv2lst, lst2csv
 from .log import log, init_logging
 from .windows import log_window, registration_file_window, test_email_address,\
-    caution_window, settings_window
+    caution_window, settings_window, wait_window
 from .json_settings import JSONSettings as _JSONSettings
 
+EMAILCLIENT_BLOCKSIZE = 100
 
 def run():
     settings = _JSONSettings(appname=APPNAME.replace(" ", "_").lower(),
@@ -181,6 +182,12 @@ def run():
                         log(fb)
                     if fb.startswith("ERROR"):
                         break # END LOOP
+
+                    if isinstance(mail_sender, EmailClient):
+                        if ((cnt+1) % EMAILCLIENT_BLOCKSIZE) == 0:
+                            if not wait_window("{} of {} send. Send next block?".format(
+                                    cnt+1, len(regs))):
+                                break
 
                     if isinstance(mail_sender, (DirectSMTP, DryRun)):
                         if cnt % SEND_PAUSE_AFTER==(SEND_PAUSE_AFTER-1):
