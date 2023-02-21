@@ -2,6 +2,8 @@ from os import path
 import pandas as pd
 
 from .misc import MarkdownTable, VarnamePattern
+from .alternative_correct import get_alternative_correct
+# get_alternative_correct = None No alternative correct
 
 class SPSSResults(object):
 
@@ -69,6 +71,7 @@ class SPSSResults(object):
 
 
     def get_answers(self, student):
+        #alternative_correct: pd.data frame with alternative correct answers
         row = self.get_row(student)
         if len(row) == 0:
             return None
@@ -76,10 +79,18 @@ class SPSSResults(object):
         dd =  row.to_dict(orient="list")
         data=[]
         for x in range(1, self.n_questions+1):
-            data.append([x, dd["v_{}_antw".format(x)][0],
-                        dd["v_{}_juist".format(x)][0]])
+            correct = dd["v_{}_juist".format(x)][0]
+            if get_alternative_correct is not None:
+                alternative = get_alternative_correct(value = correct)
+                data.append([x, dd["v_{}_antw".format(x)][0],
+                            correct, alternative])
+            else:
+                data.append([x, dd["v_{}_antw".format(x)][0], correct])
 
-        return pd.DataFrame(data, columns=["Question", "Answer", "Correct"])
+        if get_alternative_correct is not None:
+            return pd.DataFrame(data, columns=["Question", "Answer", "Correct", "Correct2"])
+        else:
+            return pd.DataFrame(data, columns=["Question", "Answer", "Correct"])
 
     def answers_as_markdown(self, student):
         answers = self.get_answers(student)
@@ -129,7 +140,3 @@ class SPSSResults(object):
                     pass
 
         return rtn.strip()
-
-
-
-
